@@ -3,7 +3,7 @@
 **The consulting link detective.** A free, no-sign-up URL shortener and QR code generator
 that inspects every link for disguises before it shortens it.
 
-## [▶ Try it now](https://erickb2021-lgtm.github.io/shurlock/)
+## [▶ Try it now]https://erickb2021-lgtm.github.io/shURLock/
 
 ---
 
