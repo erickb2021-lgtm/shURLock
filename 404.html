@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shURLock — Following the trail…</title>
+  <meta name="robots" content="noindex">
+  <script>
+    /*
+     * Static-hosting router. GitHub Pages serves this page for any path that isn't a real file,
+     * e.g. /shurlock/baker-street. We read the last path segment as the short code, look it up
+     * in this browser's link registry, re-check that it's a web link, and redirect.
+     */
+    (function () {
+      var code = decodeURIComponent(location.pathname.replace(/\/+$/, '').split('/').pop() || '').toLowerCase();
+      var link = null;
+      try { link = (JSON.parse(localStorage.getItem('shurlock:registry')) || {})[code]; } catch (e) {}
+      if (link && /^https?:\/\//i.test(link.url)) { location.replace(link.url); return; }
+      window.__shurlockMissing = code;
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800&family=EB+Garamond&family=Special+Elite&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box;
+      background: radial-gradient(800px 400px at 50% 0, rgba(201,162,74,.15), transparent 60%), #0e1316;
+      color: #f1e6cd; font: 19px/1.55 'EB Garamond', Georgia, serif; text-align: center; }
+    .card { max-width: 520px; }
+    svg { width: 90px; height: 90px; margin: 0 auto 10px; display: block; animation: sway 3s ease-in-out infinite; }
+    @keyframes sway { 50% { transform: rotate(-12deg) translateX(-6px); } }
+    h1 { font: 800 40px 'Playfair Display', Georgia, serif; margin: 0 0 10px; }
+    p { color: #b8c2c5; margin: 0 0 12px; }
+    code { font-family: 'Special Elite', monospace; color: #e8c56f; }
+    a { display: inline-block; margin-top: 12px; font-family: 'Special Elite', monospace; color: #1a1410; text-decoration: none;
+      background: linear-gradient(#e8c56f, #c9a24a); padding: 12px 22px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="20" cy="20" r="13" fill="rgba(201,162,74,.15)" stroke="#c9a24a" stroke-width="3.5"/><path d="M30 30L43 43" stroke="#8e6e2a" stroke-width="6" stroke-linecap="round"/></svg>
+    <h1>The trail goes cold.</h1>
+    <p id="msg">This case file couldn't be found.</p>
+    <p>If someone sent you this link, it may have been made on their own device in shURLock's pocket-notebook mode — ask them for the original address.</p>
+    <a id="home" href="./">Back to Baker Street</a>
+  </div>
+  <script>
+    var c = window.__shurlockMissing;
+    if (c) document.getElementById('msg').textContent = 'No case file is filed under “' + c + '”.';
+    // point "home" at the site root (works for both /shurlock/ project pages and a plain server)
+    var parts = location.pathname.split('/').filter(Boolean);
+    var home = location.hostname.endsWith('github.io') && parts.length > 1 ? '/' + parts[0] + '/' : '/';
+    document.getElementById('home').href = home;
+  </script>
+</body>
+</html>

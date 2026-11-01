@@ -1,0 +1,4030 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shURLock — The Consulting Link Detective</title>
+  <meta name="description" content="shURLock: a free, no-sign-up URL shortener and QR code generator with a detective's eye for fishy links.">
+  <meta name="theme-color" content="#14112b">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20width%3D%2248%22%20height%3D%2248%22%20rx%3D%2210%22%20fill%3D%22%230e1316%22/%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2220%22%20r%3D%2211%22%20fill%3D%22rgba%28201%2C162%2C74%2C.2%29%22%20stroke%3D%22%23e8c56f%22%20stroke-width%3D%223.5%22/%3E%3Cpath%20d%3D%22M28.5%2028.5L40%2040%22%20stroke%3D%22%23c9a24a%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=IM+Fell+English:ital@0;1&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Special+Elite&family=Caveat:wght@500&display=swap" rel="stylesheet">
+  <style>
+svg:not(.scene-svg):not(.sherlock-svg):not(.clue-art){max-width:64px;max-height:64px}
+/* ==========================================================
+   shURLock — Baker Street after dark
+   ========================================================== */
+:root {
+  --night: #14112b;
+  --night-2: #1d1938;
+  --night-3: #2a2450;
+  --fog: #b9b0d8;
+  --parchment: #f4e5c2;
+  --parchment-2: #e6d6b2;
+  --parchment-edge: #c9b48a;
+  --ink: #1a1410;
+  --ink-soft: #4a3f33;
+  --brass: #e0a23a;
+  --brass-hi: #f5c96b;
+  --brass-lo: #9a6418;
+  --oxblood: #7d2222;
+  --moss: #2f5a3c;
+  --radius: 10px;
+  --display: 'Playfair Display', Georgia, serif;
+  --engraved: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --fell: 'IM Fell English', Georgia, serif;
+  --flame: #e2622a;
+  --plum: #2a2245;
+  --body: 'EB Garamond', Georgia, serif;
+  --type: 'Special Elite', 'Courier New', monospace;
+  --hand: 'Caveat', cursive;
+  --shadow: 0 24px 60px -20px rgba(0, 0, 0, .7), 0 2px 0 rgba(255, 255, 255, .03) inset;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 500px at 85% 70%, rgba(226, 98, 42, .10), transparent 60%),
+    radial-gradient(1000px 600px at 10% 90%, rgba(120, 100, 190, .16), transparent 60%),
+    linear-gradient(180deg, #14112b 0%, #1b1734 50%, #100d20 100%);
+  color: var(--parchment);
+  font-family: var(--body);
+  font-size: 19px;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+/* paper grain over everything */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+a { color: var(--brass-hi); }
+code { font-family: var(--type); font-size: .85em; background: rgba(201, 162, 74, .12); padding: 1px 5px; border-radius: 4px; }
+svg { display: block; }
+:focus-visible { outline: 2px solid var(--brass-hi); outline-offset: 3px; }
+
+/* ---------- fog ---------- */
+.fog { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.fog span {
+  position: absolute; width: 140vw; height: 60vh; left: -20vw;
+  background: radial-gradient(closest-side, rgba(170, 190, 198, .10), transparent);
+  filter: blur(30px);
+  animation: drift 60s linear infinite;
+}
+.fog span:nth-child(1) { top: 10vh; }
+.fog span:nth-child(2) { top: 45vh; animation-duration: 85s; animation-direction: reverse; opacity: .8; }
+.fog span:nth-child(3) { top: 75vh; animation-duration: 110s; opacity: .6; }
+@keyframes drift { from { transform: translateX(-25vw); } to { transform: translateX(25vw); } }
+
+/* ---------- announcement ---------- */
+.announce-wrap { position: relative; z-index: 3; display: flex; justify-content: center; padding: 14px 16px 0; }
+.announce {
+  margin: 0;
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+  padding: 7px 18px;
+  font-family: var(--type); font-size: 15px; letter-spacing: .04em;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass));
+  border-radius: 999px;
+  box-shadow: 0 8px 24px -8px rgba(232, 197, 111, .55), 0 0 0 1px rgba(0, 0, 0, .25) inset;
+  animation: bob 3.2s ease-in-out infinite;
+}
+.announce strong { background: var(--ink); color: var(--brass-hi); padding: 1px 8px; border-radius: 999px; font-weight: 400; }
+.announce .dot { opacity: .6; }
+.announce-icon { width: 17px; height: 17px; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+/* ---------- nav ---------- */
+.nav {
+  position: relative; z-index: 3;
+  max-width: 1200px; margin: 0 auto; padding: 18px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+}
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--parchment); }
+.logo-glass { width: 40px; height: 40px; transition: transform .5s cubic-bezier(.2, .9, .3, 1.4); }
+.logo:hover .logo-glass { transform: rotate(-18deg) scale(1.08); }
+.logo-glass .lens { fill: rgba(201, 162, 74, .15); }
+.logo-glass .rim { fill: none; stroke: var(--brass); stroke-width: 3.5; }
+.logo-glass .handle { stroke: var(--brass-lo); stroke-width: 6; stroke-linecap: round; }
+.logo-glass .glint { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: 2; stroke-linecap: round; }
+.logo-word { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: -.01em; }
+.logo-word em { font-style: italic; font-weight: 600; color: var(--brass-hi); }
+.nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+.nav-links a {
+  color: var(--fog); text-decoration: none; font-family: var(--type); font-size: 15px;
+  padding: 6px 12px; border-radius: 6px; transition: color .2s, background .2s;
+}
+.nav-links a:hover { color: var(--parchment); background: rgba(255, 255, 255, .05); }
+
+main { position: relative; z-index: 2; }
+
+/* ---------- hero ---------- */
+.hero {
+  position: relative;
+  max-width: 1200px; margin: 0 auto; padding: 40px 24px 70px;
+  display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: start;
+}
+.hero-copy, .tool { position: relative; z-index: 2; }
+.eyebrow { font-family: var(--type); color: var(--brass); letter-spacing: .12em; text-transform: uppercase; font-size: 13px; margin: 0 0 14px; }
+h1 {
+  font-family: var(--display); font-weight: 800;
+  font-size: clamp(42px, 6vw, 70px); line-height: 1.02; letter-spacing: -.02em; margin: 0 0 22px;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, .5);
+}
+.ink-flourish { font-style: italic; font-weight: 600; color: var(--brass-hi); position: relative; white-space: nowrap; }
+.ink-flourish::after {
+  content: ""; position: absolute; left: 2%; right: 4%; bottom: -6px; height: 10px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10' preserveAspectRatio='none'><path d='M2 7 Q50 1 100 5 T198 3' fill='none' stroke='%23c9a24a' stroke-width='2.5' stroke-linecap='round'/></svg>") no-repeat center / 100% 100%;
+}
+.lede { font-size: 21px; color: #d9cfbb; max-width: 34em; margin: 0 0 14px; }
+.lede.subtle { font-family: var(--hand); font-size: 24px; color: var(--brass); transform: rotate(-1.5deg); }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+
+/* hidden clues + magnifying lens */
+.clues {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  --x: -400px; --y: -400px;
+  -webkit-mask-image: radial-gradient(circle 95px at var(--x) var(--y), #000 96%, transparent 100%);
+          mask-image: radial-gradient(circle 95px at var(--x) var(--y), #000 96%, transparent 100%);
+  background: radial-gradient(circle 95px at var(--x) var(--y), rgba(241, 230, 205, .10), transparent 100%);
+}
+.clue-art { width: 100%; height: 100%; }
+.clue-art .print ellipse { fill: none; stroke: rgba(232, 197, 111, .55); stroke-width: 2.4; stroke-dasharray: 34 5 14 4; }
+.clue-art .steps path { fill: rgba(232, 197, 111, .35); }
+.clue-art .note { font-family: var(--hand); font-size: 46px; fill: rgba(241, 230, 205, .85); }
+.clue-art .note.small { font-size: 32px; fill: rgba(232, 197, 111, .8); }
+.clue-art .string { fill: none; stroke: rgba(160, 40, 40, .8); stroke-width: 2.5; }
+.clue-art .pin { fill: #b23a3a; }
+
+.lens-cursor {
+  position: absolute; z-index: 1; pointer-events: none;
+  width: 190px; height: 190px; border-radius: 50%;
+  left: 0; top: 0; transform: translate(-400px, -400px);
+  border: 7px solid var(--brass);
+  box-shadow: 0 0 0 2px var(--brass-lo), 0 0 40px rgba(232, 197, 111, .25), inset 0 0 30px rgba(255, 255, 255, .08);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .14), transparent 45%);
+  opacity: 0; transition: opacity .3s;
+}
+.hero.lens-on .lens-cursor { opacity: 1; }
+.lens-handle {
+  position: absolute; width: 18px; height: 100px; left: 50%; top: 100%;
+  background: linear-gradient(90deg, #3d2a14, #6b4a24 40%, #3d2a14);
+  border-radius: 6px; border-top: 8px solid var(--brass);
+  transform-origin: 50% -95px; transform: translate(-50%, -6px) rotate(-38deg) translateY(0);
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--type); font-size: 16px; letter-spacing: .03em;
+  padding: 12px 22px; border-radius: 8px; border: 0; cursor: pointer; text-decoration: none;
+  transition: transform .15s, box-shadow .2s, background .2s, color .2s;
+}
+.btn:active { transform: translateY(1px); }
+.btn-brass { color: var(--ink); background: linear-gradient(180deg, var(--brass-hi), var(--brass)); box-shadow: 0 6px 18px -6px rgba(232, 197, 111, .6), inset 0 -2px 0 rgba(0, 0, 0, .2); }
+.btn-brass:hover { box-shadow: 0 10px 26px -6px rgba(232, 197, 111, .8), inset 0 -2px 0 rgba(0, 0, 0, .2); transform: translateY(-1px); }
+.btn-ghost { color: var(--parchment); background: transparent; box-shadow: inset 0 0 0 1.5px rgba(241, 230, 205, .35); }
+.btn-ghost:hover { box-shadow: inset 0 0 0 1.5px var(--brass); color: var(--brass-hi); }
+.btn-block { width: 100%; margin-top: 18px; font-size: 18px; padding: 14px; }
+.btn-sm { padding: 8px 14px; font-size: 14px; }
+.btn.danger:hover { box-shadow: inset 0 0 0 1.5px #c45a5a; color: #e88; }
+.btn[disabled] { opacity: .7; cursor: progress; }
+
+/* ---------- tool card ---------- */
+.tool {
+  background: var(--parchment);
+  color: var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--shadow), 0 0 0 1px var(--parchment-edge);
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle at 100% 0, rgba(140, 100, 40, .16), transparent 40%),
+    radial-gradient(circle at 0 100%, rgba(140, 100, 40, .14), transparent 45%);
+}
+.tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--night-3); }
+.tab {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  font-family: var(--display); font-weight: 600; font-size: 18px;
+  padding: 18px 10px; border: 0; cursor: pointer;
+  color: var(--fog); background: transparent; transition: color .2s, background .25s;
+}
+.tab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tab:hover { color: var(--parchment); }
+.tab.is-active { background: var(--parchment); color: var(--ink); }
+
+.panel { padding: 26px 28px 22px; }
+.panel[hidden] { display: none; }
+.field-label {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--type); font-size: 15px; color: var(--ink-soft); margin: 0 0 8px;
+}
+.field-label svg { width: 17px; height: 17px; fill: none; stroke: var(--brass-lo); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.req { color: var(--oxblood); }
+.opt { opacity: .7; }
+.input {
+  width: 100%;
+  font: 500 18px var(--body);
+  color: var(--ink);
+  background: #fbf6ea;
+  border: 1.5px solid var(--parchment-edge);
+  border-radius: 8px;
+  padding: 11px 13px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.input::placeholder { color: #9b8b6f; }
+.input:focus { outline: none; border-color: var(--brass-lo); box-shadow: 0 0 0 4px rgba(201, 162, 74, .25); }
+.input.is-bad { border-color: var(--oxblood); box-shadow: 0 0 0 4px rgba(125, 34, 34, .15); }
+.input.is-good { border-color: var(--moss); }
+.input-sm { padding: 8px 12px; font-size: 16px; width: auto; min-width: 200px; background: var(--night-2); color: var(--parchment); border-color: rgba(241, 230, 205, .2); }
+.input-sm::placeholder { color: var(--fog); }
+select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6' fill='none' stroke='%234a3f33' stroke-width='2'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; background-size: 18px; padding-right: 36px; }
+
+.row { display: flex; gap: 14px; margin-top: 18px; align-items: flex-end; }
+.col { min-width: 0; }
+.col.grow { flex: 1; }
+.domain-chip {
+  font-family: var(--type); font-size: 16px; white-space: nowrap;
+  padding: 12px 14px; border-radius: 8px;
+  background: var(--ink); color: var(--brass-hi);
+  max-width: 230px; overflow: hidden; text-overflow: ellipsis;
+}
+.hint { font-size: 14px; color: var(--ink-soft); margin: 6px 0 0; font-style: italic; }
+.preview { font-family: var(--type); font-size: 14px; margin: 8px 0 0; min-height: 1.3em; color: var(--moss); word-break: break-all; }
+.preview.bad { color: var(--oxblood); }
+.fine-print { font-size: 13px; font-style: italic; color: var(--ink-soft); margin: 14px 0 0; }
+.fine-print a { color: var(--brass-lo); }
+.error { color: var(--oxblood); font-size: 16px; margin: 12px 0 0; }
+.check { display: flex; gap: 8px; align-items: center; margin-top: 16px; font-size: 17px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--brass-lo); }
+
+/* magnifier spinner inside the button */
+.searching { width: 20px; height: 20px; animation: search 1s ease-in-out infinite; }
+.searching circle { fill: none; stroke: var(--ink); stroke-width: 2.6; }
+.searching path { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+@keyframes search { 0%, 100% { transform: translate(-3px, 0) rotate(-10deg); } 50% { transform: translate(3px, -2px) rotate(10deg); } }
+
+/* deduction report */
+.deduction { margin-top: 18px; padding: 14px 16px; border: 1.5px dashed var(--parchment-edge); border-radius: 8px; background: rgba(255, 255, 255, .35); }
+.deduction-title { cursor: pointer; font-family: var(--type); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; margin: 0; color: var(--ink-soft); }
+.deduction[open] .deduction-title { margin-bottom: 8px; }
+.deduction-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.deduction-list li {
+  display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start;
+  font-size: 16px; opacity: 0; transform: translateX(-6px); animation: reveal .35s forwards;
+}
+.deduction-list li small { display: block; color: var(--ink-soft); font-size: 14px; }
+.deduction-list .mark { font-family: var(--type); font-weight: bold; text-align: center; border-radius: 4px; font-size: 14px; line-height: 20px; }
+.pass .mark { color: var(--moss); }
+.fail .mark { color: #fff; background: var(--oxblood); }
+.warn .mark { color: var(--ink); background: var(--brass-hi); }
+.fail { color: var(--oxblood); }
+@keyframes reveal { to { opacity: 1; transform: none; } }
+
+/* result */
+.result {
+  position: relative; margin-top: 18px; padding: 18px; border-radius: 10px;
+  background: var(--ink); color: var(--parchment);
+  animation: pop .45s cubic-bezier(.2, .9, .3, 1.3);
+}
+.result-stamp {
+  position: absolute; top: -12px; right: 14px; margin: 0;
+  font-family: var(--type); text-transform: uppercase; letter-spacing: .14em; font-size: 13px;
+  color: var(--oxblood); background: var(--parchment); border: 2px solid var(--oxblood);
+  padding: 2px 10px; transform: rotate(4deg); border-radius: 4px;
+}
+.result-link { display: block; font-family: var(--type); font-size: 20px; color: var(--brass-hi); word-break: break-all; text-decoration: none; }
+.result-link:hover { text-decoration: underline; }
+.result-original { margin: 4px 0 12px; font-size: 14px; color: var(--fog); word-break: break-all; }
+@keyframes pop { from { opacity: 0; transform: scale(.94) translateY(6px); } }
+
+/* action buttons (Visit / QR / Share / Copy) */
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.act {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--type); font-size: 14px;
+  padding: 7px 12px; border-radius: 6px; border: 0; cursor: pointer; text-decoration: none;
+  color: var(--ink); background: var(--parchment-2);
+  transition: background .2s, transform .15s;
+}
+.act svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.act:hover { background: var(--brass-hi); transform: translateY(-1px); }
+.act-dark { background: var(--ink); color: var(--parchment); }
+.act-dark:hover { background: var(--night-3); color: var(--brass-hi); }
+.act.delete:hover { background: #e7b5b5; }
+
+/* swatches */
+.swatches { display: flex; gap: 8px; padding: 6px 0; }
+.swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--parchment); background: var(--sw); box-shadow: 0 0 0 1.5px var(--parchment-edge); cursor: pointer; }
+.swatch.is-active { box-shadow: 0 0 0 3px var(--brass-lo); }
+
+.qr-result { margin-top: 18px; display: grid; justify-items: center; gap: 12px; animation: pop .45s; }
+#qr-canvas { width: 240px; height: 240px; border-radius: 8px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .4); }
+
+/* ---------- case files ---------- */
+.case-files, .method { max-width: 1200px; margin: 0 auto; padding: 30px 24px 70px; position: relative; }
+.section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
+h2 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 4vw, 42px); margin: 0; letter-spacing: -.01em; }
+.case-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.cases { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.case {
+  position: relative;
+  display: grid; grid-template-columns: 74px 1fr auto; gap: 18px; align-items: center;
+  padding: 16px 18px 16px 14px;
+  background: var(--parchment); color: var(--ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  animation: pop .4s;
+}
+.case::before { /* manila folder tab */
+  content: ""; position: absolute; left: 22px; top: -8px; width: 70px; height: 12px;
+  background: var(--parchment); border-radius: 6px 6px 0 0;
+}
+.case-no {
+  font-family: var(--type); font-size: 13px; text-align: center; line-height: 1.2;
+  color: var(--oxblood); border: 2px solid var(--oxblood); border-radius: 6px; padding: 6px 4px; transform: rotate(-4deg);
+}
+.case-no b { display: block; font-size: 19px; }
+.case-main { min-width: 0; }
+.case-short { font-family: var(--type); font-size: 19px; color: #6b4b14; text-decoration: none; word-break: break-all; }
+.case-short:hover { text-decoration: underline; }
+.case-long { margin: 2px 0 0; font-size: 15px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.case-meta { margin: 2px 0 0; font-size: 13px; font-style: italic; color: #7a6b55; }
+.empty { display: flex; align-items: center; gap: 16px; padding: 26px; border: 1.5px dashed rgba(241, 230, 205, .25); border-radius: 10px; color: var(--fog); }
+.empty svg { width: 46px; height: 46px; flex: none; fill: none; stroke: var(--brass); stroke-width: 3; stroke-linecap: round; }
+.empty p { margin: 0; }
+.empty[hidden], .cases:empty { display: none; }
+
+/* ---------- method ---------- */
+.steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 22px; }
+.step {
+  padding: 24px; border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+  box-shadow: inset 0 0 0 1px rgba(241, 230, 205, .1);
+  transition: transform .3s, box-shadow .3s;
+}
+.step:hover { transform: translateY(-4px); box-shadow: inset 0 0 0 1px rgba(201, 162, 74, .5); }
+.step-num { font-family: var(--display); font-style: italic; font-size: 36px; color: var(--brass); }
+.step h3 { font-family: var(--display); font-size: 26px; margin: 4px 0 8px; }
+.step p { margin: 0; color: #d0c6b3; font-size: 18px; }
+
+/* ---------- footer & Sherlock ---------- */
+.footer {
+  position: relative; z-index: 2;
+  margin-top: 170px;
+  background: #090c0e;
+  border-top: 5px solid var(--brass);
+  padding: 70px 24px 40px;
+}
+.sherlock {
+  position: absolute; left: 50%; top: 0;
+  width: 260px; height: 200px;
+  transform: translate(-50%, -153px); /* ledge in the svg (y=148) sits on the footer border */
+}
+.sherlock-btn { all: unset; cursor: pointer; display: block; width: 100%; height: 100%; }
+.sherlock-btn:focus-visible { outline: 2px solid var(--brass-hi); outline-offset: 4px; border-radius: 8px; }
+.sherlock-svg { width: 100%; height: 100%; overflow: visible; }
+.sherlock .peek { transform: translateY(105px); transition: transform 1.1s cubic-bezier(.2, .9, .25, 1.15); }
+.sherlock .nose { transform: translateY(60px); opacity: 0; transition: transform 1s cubic-bezier(.2, .9, .25, 1.2) .15s, opacity .3s .15s; }
+.sherlock.is-up .peek, .sherlock.is-up .nose { transform: none; opacity: 1; }
+.sherlock .pupil { transition: transform .12s linear; }
+.sherlock .lid { transform-origin: center 128px; transform: scaleY(0); }
+.sherlock.blink .lid { animation: blink .18s; }
+@keyframes blink { 50% { transform: scaleY(1.6); } }
+.sherlock.suspicious .brow-raised { transform: translateY(-5px); }
+.brow { transition: transform .3s; }
+.sherlock .hand path { transition: transform .4s; }
+.sherlock-btn:hover .hand path:nth-child(odd) { transform: translateY(-2px); }
+.smoke path { fill: none; stroke: rgba(200, 210, 214, .5); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 60; animation: smoke 4s ease-in infinite; }
+.smoke path:nth-child(2) { animation-delay: 2s; }
+@keyframes smoke { 0% { stroke-dashoffset: 60; opacity: 0; transform: translateY(6px); } 30% { opacity: .9; } 100% { stroke-dashoffset: 0; opacity: 0; transform: translateY(-26px); } }
+
+.speech {
+  position: absolute; bottom: calc(100% - 30px); left: 70%;
+  width: max-content; max-width: 260px;
+  font-family: var(--hand); font-size: 22px; line-height: 1.15;
+  color: var(--ink); background: var(--parchment);
+  padding: 10px 14px; border-radius: 14px;
+  box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(8px) scale(.95); transition: opacity .25s, transform .25s; pointer-events: none;
+}
+.speech::after { content: ""; position: absolute; left: 18px; bottom: -9px; border: 10px solid transparent; border-top-color: var(--parchment); border-bottom: 0; }
+.speech.show { opacity: 1; transform: none; }
+
+.footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 40px; padding-top: 20px; }
+.footer-brand p { color: var(--fog); margin: 8px 0; font-style: italic; }
+.footer-brand .cite { font-style: normal; font-size: 15px; opacity: .7; }
+.mode { font-family: var(--type); font-size: 13px; font-style: normal !important; color: var(--brass) !important; }
+.disclaimer h2 { font-size: 24px; margin-bottom: 10px; color: var(--brass-hi); }
+.disclaimer p { color: #a9b3b6; font-size: 16px; margin: 0 0 10px; }
+.copyright { font-family: var(--type); font-size: 13px !important; opacity: .7; margin-top: 18px !important; }
+
+/* ---------- modals & toasts ---------- */
+.modal { border: 0; padding: 0; border-radius: 14px; background: var(--parchment); color: var(--ink); box-shadow: var(--shadow); max-width: min(92vw, 420px); }
+.modal::backdrop { background: rgba(5, 8, 10, .7); backdrop-filter: blur(3px); }
+.modal-inner { padding: 24px; display: grid; gap: 14px; justify-items: center; text-align: center; }
+.modal h3 { font-family: var(--display); font-size: 26px; margin: 0; }
+.modal-sub { margin: 0; font-family: var(--type); font-size: 14px; word-break: break-all; color: var(--ink-soft); }
+#qr-modal-canvas { width: 260px; height: 260px; border-radius: 8px; }
+.share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.share-grid .act { justify-content: center; padding: 10px; }
+
+.toasts { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translateX(-50%); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
+.toast {
+  font-family: var(--type); font-size: 15px;
+  background: var(--ink); color: var(--parchment);
+  padding: 10px 18px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(201, 162, 74, .5);
+  animation: pop .3s, out .4s 2.6s forwards;
+}
+.toast.bad { box-shadow: 0 10px 30px rgba(0, 0, 0, .5), inset 0 0 0 1px #c45a5a; }
+@keyframes out { to { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- responsive ---------- */
+@media (max-width: 960px) {
+  .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 24px; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .lens-cursor { width: 140px; height: 140px; }
+}
+@media (max-width: 640px) {
+  body { font-size: 18px; }
+  .nav { padding: 14px 16px; justify-content: center; }
+  .nav-links a { font-size: 14px; padding: 5px 8px; }
+  .hero, .case-files, .method { padding-left: 16px; padding-right: 16px; }
+  .panel { padding: 22px 18px; }
+  .tab { font-size: 15px; padding: 15px 6px; }
+  .row { flex-direction: column; align-items: stretch; }
+  .domain-chip { max-width: none; }
+  .case { grid-template-columns: 1fr; gap: 10px; }
+  .case-no { justify-self: start; display: flex; gap: 6px; align-items: baseline; }
+  .case-no b { display: inline; font-size: 15px; }
+  .input-sm { min-width: 0; width: 100%; }
+  .footer { padding-left: 16px; padding-right: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .fog { display: none; }
+}
+
+
+/* ==========================================================
+   DUSK OVER BAKER STREET — illustrated scene & theme
+   ========================================================== */
+.scene { position: absolute; top: 0; left: 0; right: 0; height: 960px; z-index: 0; overflow: hidden; pointer-events: none; }
+.scene-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scene-fade { position: absolute; left: 0; right: 0; bottom: 0; height: 140px; background: linear-gradient(180deg, transparent, #1b1734 85%); }
+.scene .layer { transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
+.scene .stars circle { fill: #fff6dc; animation: twinkle 4s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .2; } }
+.scene .moon { fill: #f6ecca; filter: drop-shadow(0 0 18px rgba(246, 236, 202, .7)); }
+.scene .crater { fill: #e2d5ad; opacity: .7; }
+.scene .cloud ellipse { fill: #6d6699; opacity: .55; }
+.scene .c2 ellipse { fill: #4a4478; }
+.scene .c1 { animation: cloud 70s linear infinite alternate; }
+.scene .c2 { animation: cloud 95s linear infinite alternate-reverse; }
+.scene .c3 { animation: cloud 80s linear infinite alternate; opacity: .8; }
+@keyframes cloud { from { transform: translateX(-80px); } to { transform: translateX(120px); } }
+.scene .far { fill: #77709f; }
+.scene .tower path, .scene .dome path, .scene .dome circle { fill: #645d8e; }
+.scene .clockface { fill: #f3d58f; filter: drop-shadow(0 0 10px rgba(245, 201, 107, .9)); }
+.scene .hands { stroke: #3a3360; stroke-width: 3; stroke-linecap: round; fill: none; }
+.scene .mid { fill: #2e2852; }
+.scene .win { fill: #f2b54e; filter: drop-shadow(0 0 5px rgba(242, 181, 78, .9)); }
+.scene .win.twinkle { animation: window 9s ease-in-out infinite; }
+@keyframes window { 0%, 40%, 100% { opacity: 1; } 50%, 85% { opacity: .12; } }
+.scene .cobbles ellipse { fill: none; stroke: rgba(185, 176, 216, .13); stroke-width: 2; }
+.scene .railing path, .scene .railing rect { fill: #0f0c1e; }
+.scene .lamp path { fill: #120e22; }
+.scene .lamp-glass { fill: rgba(255, 214, 128, .55) !important; }
+.scene .lamp-frame { fill: none !important; stroke: #120e22; stroke-width: 3; }
+.scene .flame { fill: #f08a2c !important; transform-origin: 1340px 612px; animation: flicker 1.6s ease-in-out infinite; filter: drop-shadow(0 0 8px #ffb347); }
+.scene .lamp-glow { fill: url(#lampGlow); animation: glow 3.5s ease-in-out infinite; transform-origin: 1340px 560px; }
+@keyframes flicker { 0%, 100% { transform: scale(1, 1); } 25% { transform: scale(.92, 1.06); } 50% { transform: scale(1.05, .94); } 75% { transform: scale(.96, 1.03); } }
+@keyframes glow { 50% { opacity: .8; transform: scale(.96); } }
+.scene .walker { animation: walk 46s linear infinite; }
+.scene .walker path { fill: #0d0a1a; }
+.scene .walker-body { animation: bobwalk .9s ease-in-out infinite; }
+.scene .leg1 { transform-origin: -6px -30px; animation: stride .9s ease-in-out infinite; }
+.scene .leg2 { transform-origin: 6px -30px; animation: stride .9s ease-in-out infinite reverse; }
+@keyframes walk { from { transform: translate(-120px, 868px) scale(1.15); } to { transform: translate(1760px, 868px) scale(1.15); } }
+@keyframes bobwalk { 50% { transform: translateY(-3px); } }
+@keyframes stride { 0%, 100% { transform: rotate(14deg); } 50% { transform: rotate(-14deg); } }
+
+/* rain streaks */
+.rain { position: absolute; top: 0; left: 0; right: 0; height: 960px; z-index: 1; pointer-events: none; opacity: .18;
+  background-image: repeating-linear-gradient(105deg, transparent 0 22px, rgba(220, 215, 255, .5) 22px 23px, transparent 23px 60px);
+  background-size: 300px 300px; animation: rain .6s linear infinite;
+  -webkit-mask-image: linear-gradient(180deg, #000 40%, transparent 95%); mask-image: linear-gradient(180deg, #000 40%, transparent 95%); }
+@keyframes rain { to { background-position: -80px 300px; } }
+
+/* typography: engraved Victorian caps */
+.logo-word { font-family: var(--engraved); font-weight: 900; letter-spacing: .06em; font-size: 28px; text-shadow: 0 2px 0 #000, 0 0 18px rgba(245, 201, 107, .35); }
+.logo-word em { font-style: normal; color: var(--brass-hi); }
+h1 { font-family: var(--engraved); font-weight: 800; letter-spacing: .01em; font-size: clamp(38px, 5.2vw, 64px); line-height: 1.08;
+  color: #fbf0d4; text-shadow: 0 3px 0 rgba(20, 17, 43, .9), 0 0 40px rgba(20, 17, 43, .8); }
+.ink-flourish { font-family: var(--fell); font-weight: 400; letter-spacing: 0; font-size: 1.12em; color: var(--brass-hi); text-shadow: 0 0 24px rgba(240, 138, 44, .55), 0 3px 0 rgba(20, 17, 43, .9); }
+h2 { font-family: var(--engraved); letter-spacing: .02em; }
+.step h3 { font-family: var(--engraved); }
+.eyebrow { color: var(--brass-hi); text-shadow: 0 1px 0 #000; }
+.lede { color: #efe4ff; text-shadow: 0 1px 12px rgba(20, 17, 43, .95); }
+.lede.subtle { color: var(--brass-hi); }
+.nav-links a { color: #e4dcf5; text-shadow: 0 1px 6px rgba(0, 0, 0, .6); }
+.nav-links a:hover { background: rgba(20, 17, 43, .45); color: var(--brass-hi); }
+.announce { background: linear-gradient(180deg, #f8d27c, #e0a23a 60%, #c97f22); box-shadow: 0 10px 30px -8px rgba(240, 138, 44, .7), 0 0 0 1px rgba(0, 0, 0, .3) inset; }
+
+/* the case card: framed like a gilt picture */
+.tool { box-shadow: 0 30px 70px -20px rgba(5, 3, 15, .9), 0 0 0 1px #9a6418, 0 0 0 6px rgba(20, 17, 43, .85), 0 0 0 7px rgba(224, 162, 58, .55); }
+.tabs { background: linear-gradient(180deg, #2a2450, #1d1938); }
+.tab { font-family: var(--engraved); font-size: 15px; letter-spacing: .04em; }
+.domain-chip { background: linear-gradient(180deg, #2a2450, #1d1938); }
+.btn-brass { background: linear-gradient(180deg, #f8d27c, #e0a23a 55%, #c27a1f); }
+
+/* sections below the scene */
+.case-files, .method { z-index: 2; }
+.case { background: linear-gradient(180deg, #f6e8c6, #ead6a8); }
+.case-short { color: #7a3d0c; }
+.step { background: linear-gradient(160deg, rgba(110, 96, 170, .18), rgba(42, 34, 69, .35)); box-shadow: inset 0 0 0 1px rgba(185, 176, 216, .18), 0 20px 40px -24px #000; }
+.step-num { font-family: var(--fell); color: var(--flame); }
+.step p { color: #ddd4f0; }
+.empty { border-color: rgba(185, 176, 216, .3); }
+.footer { background: linear-gradient(180deg, #0f0c1e, #0a0816); }
+.footer-brand .logo-word { font-size: 26px; }
+.disclaimer p { color: #b6aed0; }
+.clues { z-index: 1; }
+.hero { min-height: 760px; }
+
+@media (prefers-reduced-motion: reduce) { .rain { display: none; } .scene .walker { display: none; } }
+.hero-copy::before { content: ""; position: absolute; inset: -60px -80px -40px -100px; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(20, 17, 43, .72), rgba(20, 17, 43, .35) 60%, transparent); filter: blur(10px); }
+.lede.subtle { text-shadow: 0 2px 10px rgba(20, 17, 43, 1), 0 0 2px rgba(20, 17, 43, 1); }
+.step-icon { width: 54px; height: 54px; float: right; fill: none; stroke: var(--brass-hi); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 10px rgba(245, 201, 107, .45)); transition: transform .4s; }
+.step-icon .fill { fill: var(--flame); stroke: none; }
+.step-icon .thick { stroke-width: 6; stroke: var(--brass); }
+.step:hover .step-icon { transform: rotate(-10deg) scale(1.1); }
+.flourish { display: flex; align-items: center; gap: 14px; max-width: 360px; margin: 0 0 18px; }
+.flourish span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--brass)); }
+.flourish span:last-child { background: linear-gradient(90deg, var(--brass), transparent); }
+.flourish svg { width: 60px; height: 24px; fill: var(--brass); filter: drop-shadow(0 0 6px rgba(240, 138, 44, .6)); }
+.method { background: radial-gradient(600px 300px at 80% 60%, rgba(226, 98, 42, .12), transparent 70%); }
+.case-files { background: radial-gradient(700px 300px at 15% 40%, rgba(150, 130, 220, .12), transparent 70%); }
+
+</style>
+</head>
+<body>
+  <!-- fog drifting across the whole page -->
+  <div class="scene" id="scene" aria-hidden="true"><svg class="scene-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#14112b"/><stop offset=".22" stop-color="#2c2856"/><stop offset=".4" stop-color="#55518a"/>
+  <stop offset=".52" stop-color="#9c8fb8"/><stop offset=".6" stop-color="#d9bba6"/><stop offset=".68" stop-color="#f0c27a"/><stop offset=".8" stop-color="#e3954a"/><stop offset="1" stop-color="#b5552a"/>
+ </linearGradient>
+ <radialGradient id="moonGlow"><stop offset="0" stop-color="#f6ecca" stop-opacity=".55"/><stop offset=".35" stop-color="#d9cfe8" stop-opacity=".18"/><stop offset="1" stop-color="#d9cfe8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="lampGlow"><stop offset="0" stop-color="#ffcf6e" stop-opacity=".75"/><stop offset=".25" stop-color="#f0a33c" stop-opacity=".32"/><stop offset=".6" stop-color="#e2622a" stop-opacity=".08"/><stop offset="1" stop-color="#e2622a" stop-opacity="0"/></radialGradient>
+ <linearGradient id="street" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2340"/><stop offset="1" stop-color="#120f22"/></linearGradient>
+ <filter id="paint" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="4"/><feDisplacementMap in="SourceGraphic" scale="9"/></filter>
+ <filter id="soft"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="1600" height="900" fill="url(#sky)"/>
+<g class="stars"><circle cx="173" cy="142" r="1.6" style="animation-delay:5.9s"/><circle cx="947" cy="98" r="1.3" style="animation-delay:1.1s"/><circle cx="50" cy="147" r="1.6" style="animation-delay:0.7s"/><circle cx="622" cy="295" r="1.3" style="animation-delay:2.2s"/><circle cx="167" cy="99" r="0.8" style="animation-delay:3.9s"/><circle cx="1258" cy="289" r="1.3" style="animation-delay:5.2s"/><circle cx="1031" cy="202" r="1.6" style="animation-delay:4.2s"/><circle cx="872" cy="148" r="0.8" style="animation-delay:3.3s"/><circle cx="450" cy="228" r="0.8" style="animation-delay:1.1s"/><circle cx="1002" cy="143" r="1" style="animation-delay:1.4s"/><circle cx="1350" cy="186" r="1" style="animation-delay:5.8s"/><circle cx="721" cy="154" r="1.6" style="animation-delay:5.9s"/><circle cx="1211" cy="263" r="1" style="animation-delay:2.6s"/><circle cx="1457" cy="149" r="1" style="animation-delay:2.0s"/><circle cx="1396" cy="99" r="1" style="animation-delay:3.8s"/><circle cx="428" cy="118" r="0.8" style="animation-delay:4.6s"/><circle cx="348" cy="63" r="1.6" style="animation-delay:0.4s"/><circle cx="1258" cy="131" r="1.6" style="animation-delay:4.3s"/><circle cx="1319" cy="59" r="1.3" style="animation-delay:5.6s"/><circle cx="52" cy="119" r="0.8" style="animation-delay:0.4s"/><circle cx="1103" cy="47" r="1" style="animation-delay:4.5s"/><circle cx="1077" cy="173" r="1" style="animation-delay:3.0s"/><circle cx="1118" cy="47" r="1.6" style="animation-delay:4.7s"/><circle cx="295" cy="178" r="1.6" style="animation-delay:5.9s"/><circle cx="534" cy="296" r="1.3" style="animation-delay:5.3s"/><circle cx="1546" cy="207" r="0.8" style="animation-delay:3.4s"/><circle cx="955" cy="55" r="0.8" style="animation-delay:1.3s"/><circle cx="779" cy="222" r="0.8" style="animation-delay:0.8s"/><circle cx="930" cy="61" r="1" style="animation-delay:4.0s"/><circle cx="1054" cy="174" r="0.8" style="animation-delay:5.6s"/><circle cx="1028" cy="163" r="0.8" style="animation-delay:0.5s"/><circle cx="1302" cy="268" r="1" style="animation-delay:2.6s"/><circle cx="302" cy="16" r="1.3" style="animation-delay:5.2s"/><circle cx="213" cy="193" r="1.6" style="animation-delay:1.2s"/><circle cx="452" cy="69" r="1.3" style="animation-delay:1.7s"/><circle cx="1216" cy="56" r="1" style="animation-delay:5.1s"/><circle cx="768" cy="106" r="0.8" style="animation-delay:0.1s"/><circle cx="1342" cy="297" r="1" style="animation-delay:5.7s"/><circle cx="396" cy="121" r="1.3" style="animation-delay:6.0s"/><circle cx="763" cy="166" r="1.6" style="animation-delay:0.1s"/><circle cx="1041" cy="258" r="1.3" style="animation-delay:4.5s"/><circle cx="1579" cy="159" r="0.8" style="animation-delay:4.5s"/><circle cx="973" cy="274" r="1.6" style="animation-delay:2.2s"/><circle cx="412" cy="228" r="1.6" style="animation-delay:1.8s"/><circle cx="1219" cy="84" r="1.3" style="animation-delay:1.0s"/><circle cx="1314" cy="112" r="1.6" style="animation-delay:5.5s"/><circle cx="192" cy="197" r="1.3" style="animation-delay:3.3s"/><circle cx="588" cy="248" r="1.6" style="animation-delay:3.7s"/><circle cx="669" cy="231" r="1.6" style="animation-delay:2.7s"/><circle cx="287" cy="24" r="1" style="animation-delay:4.1s"/><circle cx="1549" cy="164" r="0.8" style="animation-delay:2.5s"/><circle cx="1197" cy="30" r="1.6" style="animation-delay:5.3s"/><circle cx="396" cy="216" r="0.8" style="animation-delay:4.1s"/><circle cx="461" cy="226" r="1.3" style="animation-delay:5.2s"/><circle cx="471" cy="109" r="0.8" style="animation-delay:1.2s"/><circle cx="1435" cy="136" r="1.6" style="animation-delay:4.2s"/><circle cx="1326" cy="272" r="0.8" style="animation-delay:1.6s"/><circle cx="1152" cy="145" r="0.8" style="animation-delay:3.5s"/><circle cx="257" cy="248" r="1.6" style="animation-delay:0.6s"/><circle cx="1435" cy="199" r="1.6" style="animation-delay:5.8s"/><circle cx="322" cy="261" r="0.8" style="animation-delay:4.7s"/><circle cx="556" cy="176" r="1.3" style="animation-delay:3.4s"/><circle cx="1424" cy="183" r="1" style="animation-delay:4.4s"/><circle cx="1100" cy="87" r="0.8" style="animation-delay:5.4s"/><circle cx="646" cy="12" r="0.8" style="animation-delay:0.3s"/><circle cx="585" cy="178" r="1.3" style="animation-delay:0.9s"/><circle cx="1144" cy="225" r="1" style="animation-delay:1.6s"/><circle cx="930" cy="200" r="1.6" style="animation-delay:4.3s"/><circle cx="1056" cy="141" r="1" style="animation-delay:4.1s"/><circle cx="207" cy="196" r="1.6" style="animation-delay:0.2s"/></g>
+<g class="layer" data-depth="2"><circle cx="1400" cy="80" r="280" fill="url(#moonGlow)"/><circle cx="1400" cy="80" r="66" class="moon"/><circle cx="1378" cy="66" r="12" class="crater"/><circle cx="1420" cy="102" r="8" class="crater"/><circle cx="1416" cy="56" r="5" class="crater"/></g>
+<g class="layer clouds" data-depth="4" filter="url(#soft)"><g class="cloud c1"><ellipse cx="1330" cy="140" rx="132" ry="37"/><ellipse cx="1231" cy="151" rx="88" ry="26"/><ellipse cx="1418" cy="149" rx="110" ry="31"/><ellipse cx="1352" cy="116" rx="77" ry="33"/><ellipse cx="1286" cy="127" rx="66" ry="24"/></g><g class="cloud c2"><ellipse cx="300" cy="170" rx="168" ry="48"/><ellipse cx="174" cy="184" rx="112" ry="34"/><ellipse cx="412" cy="181" rx="140" ry="39"/><ellipse cx="328" cy="139" rx="98" ry="42"/><ellipse cx="244" cy="153" rx="84" ry="31"/></g><g class="cloud c3"><ellipse cx="820" cy="300" rx="120" ry="34"/><ellipse cx="730" cy="310" rx="80" ry="24"/><ellipse cx="900" cy="308" rx="100" ry="28"/><ellipse cx="840" cy="278" rx="70" ry="30"/><ellipse cx="780" cy="288" rx="60" ry="22"/></g></g>
+<g class="layer" data-depth="6"><path d="M-20 900 L-20 502 L26 455 L71 502 L71 560 L114 492 L104 560 L104 541 L109 541 L109 537 L117 537 L117 541 L122 541 L122 560 L158 560 L158 484 L214 465 L167 484 L167 461 L172 461 L172 457 L180 457 L180 461 L185 461 L185 484 L270 484 L270 595 L391 595 L391 588 L442 563 L427 588 L427 559 L432 559 L432 555 L440 555 L440 559 L445 559 L445 588 L494 588 L494 562 L573 562 L573 607 L628 587 L684 607 L684 548 L732 501 L723 548 L723 531 L728 531 L728 527 L736 527 L736 531 L741 531 L741 548 L779 548 L779 513 L890 513 L890 585 L954 585 L954 482 L998 464 L1043 482 L1043 579 L1058 579 L1058 558 L1063 558 L1063 554 L1071 554 L1071 558 L1076 558 L1076 579 L1164 579 L1164 533 L1226 476 L1287 533 L1287 499 L1315 499 L1315 482 L1320 482 L1320 478 L1328 478 L1328 482 L1333 482 L1333 499 L1406 499 L1406 527 L1440 509 L1437 527 L1437 506 L1442 506 L1442 502 L1450 502 L1450 506 L1455 506 L1455 527 L1473 527 L1473 527 L1551 527 L1551 495 L1624 495 L1620 900 Z" class="far" filter="url(#paint)"/><g class="tower"><path d="M352 780 V330 h70 V780Z M346 330 h82 v-18 h-82z M356 312 L387 220 L418 312Z M387 220 v-30"/><circle cx="387" cy="370" r="24" class="clockface"/><path d="M387 370 v-14 M387 370 l10 6" class="hands"/></g><g class="dome"><path d="M940 780 V520 h180 V780Z M950 520 Q950 410 1030 400 Q1110 410 1110 520Z M1018 400 h24 v-36 h-24z M1030 364 v-26"/><circle cx="1030" cy="334" r="6"/></g></g>
+<g class="layer" data-depth="12"><path d="M-20 900 L-20 671 L16 609 L1 671 L1 653 L6 653 L6 649 L14 649 L14 653 L19 653 L19 671 L53 671 L53 671 L69 671 L69 642 L74 642 L74 638 L82 638 L82 642 L87 642 L87 671 L180 671 L180 596 L216 578 L253 596 L253 573 L294 552 L282 573 L282 547 L287 547 L287 543 L295 543 L295 547 L300 547 L300 573 L336 573 L336 591 L400 591 L400 572 L405 572 L405 568 L413 568 L413 572 L418 572 L418 591 L480 591 L480 588 L551 588 L551 626 L618 571 L597 626 L597 611 L602 611 L602 607 L610 607 L610 611 L615 611 L615 626 L686 626 L686 578 L729 578 L729 554 L734 554 L734 550 L742 550 L742 554 L747 554 L747 578 L788 578 L788 670 L830 654 L802 670 L802 654 L807 654 L807 650 L815 650 L815 654 L820 654 L820 670 L872 670 L872 630 L901 630 L901 600 L906 600 L906 596 L914 596 L914 600 L919 600 L919 630 L985 630 L985 657 L996 657 L996 637 L1001 637 L1001 633 L1009 633 L1009 637 L1014 637 L1014 657 L1118 657 L1118 678 L1153 678 L1153 653 L1158 653 L1158 649 L1166 649 L1166 653 L1171 653 L1171 678 L1199 678 L1199 622 L1344 622 L1344 666 L1391 639 L1438 666 L1438 667 L1452 667 L1452 649 L1457 649 L1457 645 L1465 645 L1465 649 L1470 649 L1470 667 L1535 667 L1535 612 L1551 612 L1551 583 L1556 583 L1556 579 L1564 579 L1564 583 L1569 583 L1569 612 L1663 612 L1620 900 Z" class="mid" filter="url(#paint)"/><g class="windows"><rect x="34" y="687" width="9" height="13" class="win" style="animation-delay:6.1s"/><rect x="12" y="717" width="9" height="13" class="win" style="animation-delay:0.5s"/><rect x="129" y="687" width="9" height="13" class="win twinkle" style="animation-delay:4.6s"/><rect x="85" y="747" width="9" height="13" class="win" style="animation-delay:8.5s"/><rect x="151" y="747" width="9" height="13" class="win twinkle" style="animation-delay:5.5s"/><rect x="212" y="612" width="9" height="13" class="win" style="animation-delay:5.3s"/><rect x="190" y="642" width="9" height="13" class="win" style="animation-delay:6.0s"/><rect x="234" y="642" width="9" height="13" class="win" style="animation-delay:2.0s"/><rect x="212" y="732" width="9" height="13" class="win twinkle" style="animation-delay:1.6s"/><rect x="307" y="589" width="9" height="13" class="win" style="animation-delay:4.3s"/><rect x="263" y="649" width="9" height="13" class="win twinkle" style="animation-delay:8.4s"/><rect x="307" y="679" width="9" height="13" class="win" style="animation-delay:0.5s"/><rect x="368" y="607" width="9" height="13" class="win twinkle" style="animation-delay:5.3s"/><rect x="390" y="607" width="9" height="13" class="win" style="animation-delay:6.1s"/><rect x="456" y="607" width="9" height="13" class="win twinkle" style="animation-delay:3.5s"/><rect x="368" y="637" width="9" height="13" class="win" style="animation-delay:1.4s"/><rect x="390" y="637" width="9" height="13" class="win twinkle" style="animation-delay:7.2s"/><rect x="412" y="637" width="9" height="13" class="win" style="animation-delay:6.1s"/><rect x="434" y="637" width="9" height="13" class="win twinkle" style="animation-delay:8.0s"/><rect x="456" y="667" width="9" height="13" class="win twinkle" style="animation-delay:5.7s"/><rect x="346" y="697" width="9" height="13" class="win" style="animation-delay:7.7s"/><rect x="346" y="727" width="9" height="13" class="win" style="animation-delay:2.7s"/><rect x="456" y="727" width="9" height="13" class="win" style="animation-delay:6.1s"/><rect x="490" y="604" width="9" height="13" class="win twinkle" style="animation-delay:5.0s"/><rect x="512" y="664" width="9" height="13" class="win" style="animation-delay:0.8s"/><rect x="561" y="642" width="9" height="13" class="win" style="animation-delay:8.3s"/><rect x="627" y="642" width="9" height="13" class="win twinkle" style="animation-delay:7.9s"/><rect x="583" y="672" width="9" height="13" class="win" style="animation-delay:8.4s"/><rect x="605" y="672" width="9" height="13" class="win twinkle" style="animation-delay:4.4s"/><rect x="627" y="672" width="9" height="13" class="win twinkle" style="animation-delay:8.6s"/><rect x="671" y="702" width="9" height="13" class="win twinkle" style="animation-delay:5.7s"/><rect x="561" y="732" width="9" height="13" class="win" style="animation-delay:3.8s"/><rect x="671" y="732" width="9" height="13" class="win twinkle" style="animation-delay:3.0s"/><rect x="762" y="594" width="9" height="13" class="win twinkle" style="animation-delay:3.5s"/><rect x="696" y="654" width="9" height="13" class="win twinkle" style="animation-delay:6.2s"/><rect x="740" y="654" width="9" height="13" class="win" style="animation-delay:5.8s"/><rect x="762" y="654" width="9" height="13" class="win" style="animation-delay:6.7s"/><rect x="762" y="684" width="9" height="13" class="win" style="animation-delay:7.1s"/><rect x="740" y="714" width="9" height="13" class="win twinkle" style="animation-delay:6.3s"/><rect x="904" y="646" width="9" height="13" class="win" style="animation-delay:8.6s"/><rect x="970" y="706" width="9" height="13" class="win" style="animation-delay:2.3s"/><rect x="1039" y="673" width="9" height="13" class="win twinkle" style="animation-delay:2.6s"/><rect x="1039" y="733" width="9" height="13" class="win" style="animation-delay:3.5s"/><rect x="1172" y="694" width="9" height="13" class="win" style="animation-delay:3.6s"/><rect x="1172" y="754" width="9" height="13" class="win" style="animation-delay:2.7s"/><rect x="1209" y="638" width="9" height="13" class="win" style="animation-delay:1.4s"/><rect x="1231" y="638" width="9" height="13" class="win" style="animation-delay:8.1s"/><rect x="1209" y="698" width="9" height="13" class="win" style="animation-delay:2.8s"/><rect x="1275" y="728" width="9" height="13" class="win" style="animation-delay:1.4s"/><rect x="1319" y="728" width="9" height="13" class="win" style="animation-delay:7.5s"/><rect x="1492" y="683" width="9" height="13" class="win" style="animation-delay:5.2s"/><rect x="1545" y="628" width="9" height="13" class="win twinkle" style="animation-delay:0.5s"/><rect x="1633" y="628" width="9" height="13" class="win twinkle" style="animation-delay:1.5s"/><rect x="1545" y="658" width="9" height="13" class="win twinkle" style="animation-delay:6.2s"/><rect x="1567" y="658" width="9" height="13" class="win twinkle" style="animation-delay:0.5s"/><rect x="1633" y="658" width="9" height="13" class="win" style="animation-delay:8.7s"/><rect x="1589" y="748" width="9" height="13" class="win" style="animation-delay:7.9s"/></g></g>
+<rect y="780" width="1600" height="120" fill="url(#street)"/>
+<g class="cobbles"><ellipse cx="-20" cy="792" rx="17" ry="5"/><ellipse cx="20" cy="792" rx="17" ry="5"/><ellipse cx="60" cy="792" rx="17" ry="5"/><ellipse cx="100" cy="792" rx="17" ry="5"/><ellipse cx="140" cy="792" rx="17" ry="5"/><ellipse cx="180" cy="792" rx="17" ry="5"/><ellipse cx="220" cy="792" rx="17" ry="5"/><ellipse cx="260" cy="792" rx="17" ry="5"/><ellipse cx="300" cy="792" rx="17" ry="5"/><ellipse cx="340" cy="792" rx="17" ry="5"/><ellipse cx="380" cy="792" rx="17" ry="5"/><ellipse cx="420" cy="792" rx="17" ry="5"/><ellipse cx="460" cy="792" rx="17" ry="5"/><ellipse cx="500" cy="792" rx="17" ry="5"/><ellipse cx="540" cy="792" rx="17" ry="5"/><ellipse cx="580" cy="792" rx="17" ry="5"/><ellipse cx="620" cy="792" rx="17" ry="5"/><ellipse cx="660" cy="792" rx="17" ry="5"/><ellipse cx="700" cy="792" rx="17" ry="5"/><ellipse cx="740" cy="792" rx="17" ry="5"/><ellipse cx="780" cy="792" rx="17" ry="5"/><ellipse cx="820" cy="792" rx="17" ry="5"/><ellipse cx="860" cy="792" rx="17" ry="5"/><ellipse cx="900" cy="792" rx="17" ry="5"/><ellipse cx="940" cy="792" rx="17" ry="5"/><ellipse cx="980" cy="792" rx="17" ry="5"/><ellipse cx="1020" cy="792" rx="17" ry="5"/><ellipse cx="1060" cy="792" rx="17" ry="5"/><ellipse cx="1100" cy="792" rx="17" ry="5"/><ellipse cx="1140" cy="792" rx="17" ry="5"/><ellipse cx="1180" cy="792" rx="17" ry="5"/><ellipse cx="1220" cy="792" rx="17" ry="5"/><ellipse cx="1260" cy="792" rx="17" ry="5"/><ellipse cx="1300" cy="792" rx="17" ry="5"/><ellipse cx="1340" cy="792" rx="17" ry="5"/><ellipse cx="1380" cy="792" rx="17" ry="5"/><ellipse cx="1420" cy="792" rx="17" ry="5"/><ellipse cx="1460" cy="792" rx="17" ry="5"/><ellipse cx="1500" cy="792" rx="17" ry="5"/><ellipse cx="1540" cy="792" rx="17" ry="5"/><ellipse cx="1580" cy="792" rx="17" ry="5"/><ellipse cx="1620" cy="792" rx="17" ry="5"/><ellipse cx="0" cy="806" rx="17" ry="5"/><ellipse cx="40" cy="806" rx="17" ry="5"/><ellipse cx="80" cy="806" rx="17" ry="5"/><ellipse cx="120" cy="806" rx="17" ry="5"/><ellipse cx="160" cy="806" rx="17" ry="5"/><ellipse cx="200" cy="806" rx="17" ry="5"/><ellipse cx="240" cy="806" rx="17" ry="5"/><ellipse cx="280" cy="806" rx="17" ry="5"/><ellipse cx="320" cy="806" rx="17" ry="5"/><ellipse cx="360" cy="806" rx="17" ry="5"/><ellipse cx="400" cy="806" rx="17" ry="5"/><ellipse cx="440" cy="806" rx="17" ry="5"/><ellipse cx="480" cy="806" rx="17" ry="5"/><ellipse cx="520" cy="806" rx="17" ry="5"/><ellipse cx="560" cy="806" rx="17" ry="5"/><ellipse cx="600" cy="806" rx="17" ry="5"/><ellipse cx="640" cy="806" rx="17" ry="5"/><ellipse cx="680" cy="806" rx="17" ry="5"/><ellipse cx="720" cy="806" rx="17" ry="5"/><ellipse cx="760" cy="806" rx="17" ry="5"/><ellipse cx="800" cy="806" rx="17" ry="5"/><ellipse cx="840" cy="806" rx="17" ry="5"/><ellipse cx="880" cy="806" rx="17" ry="5"/><ellipse cx="920" cy="806" rx="17" ry="5"/><ellipse cx="960" cy="806" rx="17" ry="5"/><ellipse cx="1000" cy="806" rx="17" ry="5"/><ellipse cx="1040" cy="806" rx="17" ry="5"/><ellipse cx="1080" cy="806" rx="17" ry="5"/><ellipse cx="1120" cy="806" rx="17" ry="5"/><ellipse cx="1160" cy="806" rx="17" ry="5"/><ellipse cx="1200" cy="806" rx="17" ry="5"/><ellipse cx="1240" cy="806" rx="17" ry="5"/><ellipse cx="1280" cy="806" rx="17" ry="5"/><ellipse cx="1320" cy="806" rx="17" ry="5"/><ellipse cx="1360" cy="806" rx="17" ry="5"/><ellipse cx="1400" cy="806" rx="17" ry="5"/><ellipse cx="1440" cy="806" rx="17" ry="5"/><ellipse cx="1480" cy="806" rx="17" ry="5"/><ellipse cx="1520" cy="806" rx="17" ry="5"/><ellipse cx="1560" cy="806" rx="17" ry="5"/><ellipse cx="1600" cy="806" rx="17" ry="5"/><ellipse cx="1640" cy="806" rx="17" ry="5"/><ellipse cx="-20" cy="820" rx="17" ry="5"/><ellipse cx="20" cy="820" rx="17" ry="5"/><ellipse cx="60" cy="820" rx="17" ry="5"/><ellipse cx="100" cy="820" rx="17" ry="5"/><ellipse cx="140" cy="820" rx="17" ry="5"/><ellipse cx="180" cy="820" rx="17" ry="5"/><ellipse cx="220" cy="820" rx="17" ry="5"/><ellipse cx="260" cy="820" rx="17" ry="5"/><ellipse cx="300" cy="820" rx="17" ry="5"/><ellipse cx="340" cy="820" rx="17" ry="5"/><ellipse cx="380" cy="820" rx="17" ry="5"/><ellipse cx="420" cy="820" rx="17" ry="5"/><ellipse cx="460" cy="820" rx="17" ry="5"/><ellipse cx="500" cy="820" rx="17" ry="5"/><ellipse cx="540" cy="820" rx="17" ry="5"/><ellipse cx="580" cy="820" rx="17" ry="5"/><ellipse cx="620" cy="820" rx="17" ry="5"/><ellipse cx="660" cy="820" rx="17" ry="5"/><ellipse cx="700" cy="820" rx="17" ry="5"/><ellipse cx="740" cy="820" rx="17" ry="5"/><ellipse cx="780" cy="820" rx="17" ry="5"/><ellipse cx="820" cy="820" rx="17" ry="5"/><ellipse cx="860" cy="820" rx="17" ry="5"/><ellipse cx="900" cy="820" rx="17" ry="5"/><ellipse cx="940" cy="820" rx="17" ry="5"/><ellipse cx="980" cy="820" rx="17" ry="5"/><ellipse cx="1020" cy="820" rx="17" ry="5"/><ellipse cx="1060" cy="820" rx="17" ry="5"/><ellipse cx="1100" cy="820" rx="17" ry="5"/><ellipse cx="1140" cy="820" rx="17" ry="5"/><ellipse cx="1180" cy="820" rx="17" ry="5"/><ellipse cx="1220" cy="820" rx="17" ry="5"/><ellipse cx="1260" cy="820" rx="17" ry="5"/><ellipse cx="1300" cy="820" rx="17" ry="5"/><ellipse cx="1340" cy="820" rx="17" ry="5"/><ellipse cx="1380" cy="820" rx="17" ry="5"/><ellipse cx="1420" cy="820" rx="17" ry="5"/><ellipse cx="1460" cy="820" rx="17" ry="5"/><ellipse cx="1500" cy="820" rx="17" ry="5"/><ellipse cx="1540" cy="820" rx="17" ry="5"/><ellipse cx="1580" cy="820" rx="17" ry="5"/><ellipse cx="1620" cy="820" rx="17" ry="5"/><ellipse cx="0" cy="834" rx="17" ry="5"/><ellipse cx="40" cy="834" rx="17" ry="5"/><ellipse cx="80" cy="834" rx="17" ry="5"/><ellipse cx="120" cy="834" rx="17" ry="5"/><ellipse cx="160" cy="834" rx="17" ry="5"/><ellipse cx="200" cy="834" rx="17" ry="5"/><ellipse cx="240" cy="834" rx="17" ry="5"/><ellipse cx="280" cy="834" rx="17" ry="5"/><ellipse cx="320" cy="834" rx="17" ry="5"/><ellipse cx="360" cy="834" rx="17" ry="5"/><ellipse cx="400" cy="834" rx="17" ry="5"/><ellipse cx="440" cy="834" rx="17" ry="5"/><ellipse cx="480" cy="834" rx="17" ry="5"/><ellipse cx="520" cy="834" rx="17" ry="5"/><ellipse cx="560" cy="834" rx="17" ry="5"/><ellipse cx="600" cy="834" rx="17" ry="5"/><ellipse cx="640" cy="834" rx="17" ry="5"/><ellipse cx="680" cy="834" rx="17" ry="5"/><ellipse cx="720" cy="834" rx="17" ry="5"/><ellipse cx="760" cy="834" rx="17" ry="5"/><ellipse cx="800" cy="834" rx="17" ry="5"/><ellipse cx="840" cy="834" rx="17" ry="5"/><ellipse cx="880" cy="834" rx="17" ry="5"/><ellipse cx="920" cy="834" rx="17" ry="5"/><ellipse cx="960" cy="834" rx="17" ry="5"/><ellipse cx="1000" cy="834" rx="17" ry="5"/><ellipse cx="1040" cy="834" rx="17" ry="5"/><ellipse cx="1080" cy="834" rx="17" ry="5"/><ellipse cx="1120" cy="834" rx="17" ry="5"/><ellipse cx="1160" cy="834" rx="17" ry="5"/><ellipse cx="1200" cy="834" rx="17" ry="5"/><ellipse cx="1240" cy="834" rx="17" ry="5"/><ellipse cx="1280" cy="834" rx="17" ry="5"/><ellipse cx="1320" cy="834" rx="17" ry="5"/><ellipse cx="1360" cy="834" rx="17" ry="5"/><ellipse cx="1400" cy="834" rx="17" ry="5"/><ellipse cx="1440" cy="834" rx="17" ry="5"/><ellipse cx="1480" cy="834" rx="17" ry="5"/><ellipse cx="1520" cy="834" rx="17" ry="5"/><ellipse cx="1560" cy="834" rx="17" ry="5"/><ellipse cx="1600" cy="834" rx="17" ry="5"/><ellipse cx="1640" cy="834" rx="17" ry="5"/><ellipse cx="-20" cy="848" rx="17" ry="5"/><ellipse cx="20" cy="848" rx="17" ry="5"/><ellipse cx="60" cy="848" rx="17" ry="5"/><ellipse cx="100" cy="848" rx="17" ry="5"/><ellipse cx="140" cy="848" rx="17" ry="5"/><ellipse cx="180" cy="848" rx="17" ry="5"/><ellipse cx="220" cy="848" rx="17" ry="5"/><ellipse cx="260" cy="848" rx="17" ry="5"/><ellipse cx="300" cy="848" rx="17" ry="5"/><ellipse cx="340" cy="848" rx="17" ry="5"/><ellipse cx="380" cy="848" rx="17" ry="5"/><ellipse cx="420" cy="848" rx="17" ry="5"/><ellipse cx="460" cy="848" rx="17" ry="5"/><ellipse cx="500" cy="848" rx="17" ry="5"/><ellipse cx="540" cy="848" rx="17" ry="5"/><ellipse cx="580" cy="848" rx="17" ry="5"/><ellipse cx="620" cy="848" rx="17" ry="5"/><ellipse cx="660" cy="848" rx="17" ry="5"/><ellipse cx="700" cy="848" rx="17" ry="5"/><ellipse cx="740" cy="848" rx="17" ry="5"/><ellipse cx="780" cy="848" rx="17" ry="5"/><ellipse cx="820" cy="848" rx="17" ry="5"/><ellipse cx="860" cy="848" rx="17" ry="5"/><ellipse cx="900" cy="848" rx="17" ry="5"/><ellipse cx="940" cy="848" rx="17" ry="5"/><ellipse cx="980" cy="848" rx="17" ry="5"/><ellipse cx="1020" cy="848" rx="17" ry="5"/><ellipse cx="1060" cy="848" rx="17" ry="5"/><ellipse cx="1100" cy="848" rx="17" ry="5"/><ellipse cx="1140" cy="848" rx="17" ry="5"/><ellipse cx="1180" cy="848" rx="17" ry="5"/><ellipse cx="1220" cy="848" rx="17" ry="5"/><ellipse cx="1260" cy="848" rx="17" ry="5"/><ellipse cx="1300" cy="848" rx="17" ry="5"/><ellipse cx="1340" cy="848" rx="17" ry="5"/><ellipse cx="1380" cy="848" rx="17" ry="5"/><ellipse cx="1420" cy="848" rx="17" ry="5"/><ellipse cx="1460" cy="848" rx="17" ry="5"/><ellipse cx="1500" cy="848" rx="17" ry="5"/><ellipse cx="1540" cy="848" rx="17" ry="5"/><ellipse cx="1580" cy="848" rx="17" ry="5"/><ellipse cx="1620" cy="848" rx="17" ry="5"/><ellipse cx="0" cy="862" rx="17" ry="5"/><ellipse cx="40" cy="862" rx="17" ry="5"/><ellipse cx="80" cy="862" rx="17" ry="5"/><ellipse cx="120" cy="862" rx="17" ry="5"/><ellipse cx="160" cy="862" rx="17" ry="5"/><ellipse cx="200" cy="862" rx="17" ry="5"/><ellipse cx="240" cy="862" rx="17" ry="5"/><ellipse cx="280" cy="862" rx="17" ry="5"/><ellipse cx="320" cy="862" rx="17" ry="5"/><ellipse cx="360" cy="862" rx="17" ry="5"/><ellipse cx="400" cy="862" rx="17" ry="5"/><ellipse cx="440" cy="862" rx="17" ry="5"/><ellipse cx="480" cy="862" rx="17" ry="5"/><ellipse cx="520" cy="862" rx="17" ry="5"/><ellipse cx="560" cy="862" rx="17" ry="5"/><ellipse cx="600" cy="862" rx="17" ry="5"/><ellipse cx="640" cy="862" rx="17" ry="5"/><ellipse cx="680" cy="862" rx="17" ry="5"/><ellipse cx="720" cy="862" rx="17" ry="5"/><ellipse cx="760" cy="862" rx="17" ry="5"/><ellipse cx="800" cy="862" rx="17" ry="5"/><ellipse cx="840" cy="862" rx="17" ry="5"/><ellipse cx="880" cy="862" rx="17" ry="5"/><ellipse cx="920" cy="862" rx="17" ry="5"/><ellipse cx="960" cy="862" rx="17" ry="5"/><ellipse cx="1000" cy="862" rx="17" ry="5"/><ellipse cx="1040" cy="862" rx="17" ry="5"/><ellipse cx="1080" cy="862" rx="17" ry="5"/><ellipse cx="1120" cy="862" rx="17" ry="5"/><ellipse cx="1160" cy="862" rx="17" ry="5"/><ellipse cx="1200" cy="862" rx="17" ry="5"/><ellipse cx="1240" cy="862" rx="17" ry="5"/><ellipse cx="1280" cy="862" rx="17" ry="5"/><ellipse cx="1320" cy="862" rx="17" ry="5"/><ellipse cx="1360" cy="862" rx="17" ry="5"/><ellipse cx="1400" cy="862" rx="17" ry="5"/><ellipse cx="1440" cy="862" rx="17" ry="5"/><ellipse cx="1480" cy="862" rx="17" ry="5"/><ellipse cx="1520" cy="862" rx="17" ry="5"/><ellipse cx="1560" cy="862" rx="17" ry="5"/><ellipse cx="1600" cy="862" rx="17" ry="5"/><ellipse cx="1640" cy="862" rx="17" ry="5"/><ellipse cx="-20" cy="876" rx="17" ry="5"/><ellipse cx="20" cy="876" rx="17" ry="5"/><ellipse cx="60" cy="876" rx="17" ry="5"/><ellipse cx="100" cy="876" rx="17" ry="5"/><ellipse cx="140" cy="876" rx="17" ry="5"/><ellipse cx="180" cy="876" rx="17" ry="5"/><ellipse cx="220" cy="876" rx="17" ry="5"/><ellipse cx="260" cy="876" rx="17" ry="5"/><ellipse cx="300" cy="876" rx="17" ry="5"/><ellipse cx="340" cy="876" rx="17" ry="5"/><ellipse cx="380" cy="876" rx="17" ry="5"/><ellipse cx="420" cy="876" rx="17" ry="5"/><ellipse cx="460" cy="876" rx="17" ry="5"/><ellipse cx="500" cy="876" rx="17" ry="5"/><ellipse cx="540" cy="876" rx="17" ry="5"/><ellipse cx="580" cy="876" rx="17" ry="5"/><ellipse cx="620" cy="876" rx="17" ry="5"/><ellipse cx="660" cy="876" rx="17" ry="5"/><ellipse cx="700" cy="876" rx="17" ry="5"/><ellipse cx="740" cy="876" rx="17" ry="5"/><ellipse cx="780" cy="876" rx="17" ry="5"/><ellipse cx="820" cy="876" rx="17" ry="5"/><ellipse cx="860" cy="876" rx="17" ry="5"/><ellipse cx="900" cy="876" rx="17" ry="5"/><ellipse cx="940" cy="876" rx="17" ry="5"/><ellipse cx="980" cy="876" rx="17" ry="5"/><ellipse cx="1020" cy="876" rx="17" ry="5"/><ellipse cx="1060" cy="876" rx="17" ry="5"/><ellipse cx="1100" cy="876" rx="17" ry="5"/><ellipse cx="1140" cy="876" rx="17" ry="5"/><ellipse cx="1180" cy="876" rx="17" ry="5"/><ellipse cx="1220" cy="876" rx="17" ry="5"/><ellipse cx="1260" cy="876" rx="17" ry="5"/><ellipse cx="1300" cy="876" rx="17" ry="5"/><ellipse cx="1340" cy="876" rx="17" ry="5"/><ellipse cx="1380" cy="876" rx="17" ry="5"/><ellipse cx="1420" cy="876" rx="17" ry="5"/><ellipse cx="1460" cy="876" rx="17" ry="5"/><ellipse cx="1500" cy="876" rx="17" ry="5"/><ellipse cx="1540" cy="876" rx="17" ry="5"/><ellipse cx="1580" cy="876" rx="17" ry="5"/><ellipse cx="1620" cy="876" rx="17" ry="5"/><ellipse cx="0" cy="890" rx="17" ry="5"/><ellipse cx="40" cy="890" rx="17" ry="5"/><ellipse cx="80" cy="890" rx="17" ry="5"/><ellipse cx="120" cy="890" rx="17" ry="5"/><ellipse cx="160" cy="890" rx="17" ry="5"/><ellipse cx="200" cy="890" rx="17" ry="5"/><ellipse cx="240" cy="890" rx="17" ry="5"/><ellipse cx="280" cy="890" rx="17" ry="5"/><ellipse cx="320" cy="890" rx="17" ry="5"/><ellipse cx="360" cy="890" rx="17" ry="5"/><ellipse cx="400" cy="890" rx="17" ry="5"/><ellipse cx="440" cy="890" rx="17" ry="5"/><ellipse cx="480" cy="890" rx="17" ry="5"/><ellipse cx="520" cy="890" rx="17" ry="5"/><ellipse cx="560" cy="890" rx="17" ry="5"/><ellipse cx="600" cy="890" rx="17" ry="5"/><ellipse cx="640" cy="890" rx="17" ry="5"/><ellipse cx="680" cy="890" rx="17" ry="5"/><ellipse cx="720" cy="890" rx="17" ry="5"/><ellipse cx="760" cy="890" rx="17" ry="5"/><ellipse cx="800" cy="890" rx="17" ry="5"/><ellipse cx="840" cy="890" rx="17" ry="5"/><ellipse cx="880" cy="890" rx="17" ry="5"/><ellipse cx="920" cy="890" rx="17" ry="5"/><ellipse cx="960" cy="890" rx="17" ry="5"/><ellipse cx="1000" cy="890" rx="17" ry="5"/><ellipse cx="1040" cy="890" rx="17" ry="5"/><ellipse cx="1080" cy="890" rx="17" ry="5"/><ellipse cx="1120" cy="890" rx="17" ry="5"/><ellipse cx="1160" cy="890" rx="17" ry="5"/><ellipse cx="1200" cy="890" rx="17" ry="5"/><ellipse cx="1240" cy="890" rx="17" ry="5"/><ellipse cx="1280" cy="890" rx="17" ry="5"/><ellipse cx="1320" cy="890" rx="17" ry="5"/><ellipse cx="1360" cy="890" rx="17" ry="5"/><ellipse cx="1400" cy="890" rx="17" ry="5"/><ellipse cx="1440" cy="890" rx="17" ry="5"/><ellipse cx="1480" cy="890" rx="17" ry="5"/><ellipse cx="1520" cy="890" rx="17" ry="5"/><ellipse cx="1560" cy="890" rx="17" ry="5"/><ellipse cx="1600" cy="890" rx="17" ry="5"/><ellipse cx="1640" cy="890" rx="17" ry="5"/><ellipse cx="-20" cy="904" rx="17" ry="5"/><ellipse cx="20" cy="904" rx="17" ry="5"/><ellipse cx="60" cy="904" rx="17" ry="5"/><ellipse cx="100" cy="904" rx="17" ry="5"/><ellipse cx="140" cy="904" rx="17" ry="5"/><ellipse cx="180" cy="904" rx="17" ry="5"/><ellipse cx="220" cy="904" rx="17" ry="5"/><ellipse cx="260" cy="904" rx="17" ry="5"/><ellipse cx="300" cy="904" rx="17" ry="5"/><ellipse cx="340" cy="904" rx="17" ry="5"/><ellipse cx="380" cy="904" rx="17" ry="5"/><ellipse cx="420" cy="904" rx="17" ry="5"/><ellipse cx="460" cy="904" rx="17" ry="5"/><ellipse cx="500" cy="904" rx="17" ry="5"/><ellipse cx="540" cy="904" rx="17" ry="5"/><ellipse cx="580" cy="904" rx="17" ry="5"/><ellipse cx="620" cy="904" rx="17" ry="5"/><ellipse cx="660" cy="904" rx="17" ry="5"/><ellipse cx="700" cy="904" rx="17" ry="5"/><ellipse cx="740" cy="904" rx="17" ry="5"/><ellipse cx="780" cy="904" rx="17" ry="5"/><ellipse cx="820" cy="904" rx="17" ry="5"/><ellipse cx="860" cy="904" rx="17" ry="5"/><ellipse cx="900" cy="904" rx="17" ry="5"/><ellipse cx="940" cy="904" rx="17" ry="5"/><ellipse cx="980" cy="904" rx="17" ry="5"/><ellipse cx="1020" cy="904" rx="17" ry="5"/><ellipse cx="1060" cy="904" rx="17" ry="5"/><ellipse cx="1100" cy="904" rx="17" ry="5"/><ellipse cx="1140" cy="904" rx="17" ry="5"/><ellipse cx="1180" cy="904" rx="17" ry="5"/><ellipse cx="1220" cy="904" rx="17" ry="5"/><ellipse cx="1260" cy="904" rx="17" ry="5"/><ellipse cx="1300" cy="904" rx="17" ry="5"/><ellipse cx="1340" cy="904" rx="17" ry="5"/><ellipse cx="1380" cy="904" rx="17" ry="5"/><ellipse cx="1420" cy="904" rx="17" ry="5"/><ellipse cx="1460" cy="904" rx="17" ry="5"/><ellipse cx="1500" cy="904" rx="17" ry="5"/><ellipse cx="1540" cy="904" rx="17" ry="5"/><ellipse cx="1580" cy="904" rx="17" ry="5"/><ellipse cx="1620" cy="904" rx="17" ry="5"/></g>
+<g class="layer" data-depth="20"><g class="walker"><g class="walker-body">
+ <path d="M0 -92 q-9 0 -11 -9 q-8 -1 -9 -4 q10 -3 11 -2 q2 -10 9 -10 q8 0 10 8 q8 0 10 4 q-8 2 -10 3 q-1 9 -10 10z"/>
+ <path d="M-4 -90 h9 l2 8 q20 4 22 30 q-12 4 -16 2 l-2 22 h-20 l-2 -22 q-6 3 -16 -2 q4 -28 23 -30z"/>
+ <path class="leg1" d="M-8 -30 l-6 30 h6 l6 -26z"/><path class="leg2" d="M4 -30 l6 30 h-6 l-6 -26z"/>
+ <path d="M12 -78 q12 -2 16 6 q-6 0 -8 4z"/>
+</g></g><g class="lamp">
+ <circle cx="1340" cy="560" r="240" class="lamp-glow"/>
+ <path d="M1332 900 V640 h16 V900Z M1320 900 h40 v-30 h-40z M1324 640 h32 l-6 -12 h-20z"/>
+ <path d="M1310 628 L1300 540 L1380 540 L1370 628Z" class="lamp-glass"/>
+ <path d="M1294 540 h92 l-16 -20 h-60z M1332 520 v-14 h16 v14z"/>
+ <path d="M1340 612 q-12 -18 0 -44 q4 16 10 22 q4 -10 2 -20 q12 18 -2 42z" class="flame"/>
+ <path d="M1310 628 L1300 540 M1340 628 V540 M1370 628 L1380 540" class="lamp-frame"/>
+</g><g class="railing"><rect x="0" y="812" width="520" height="6"/><rect x="0" y="860" width="520" height="6"/><path d="M8 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M30 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M52 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M74 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M96 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M118 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M140 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M162 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M184 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M206 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M228 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M250 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M272 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M294 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M316 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M338 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M360 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M382 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M404 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M426 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M448 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M470 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M492 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/><path d="M514 870 V800 l-5 0 l5 -16 l5 16 l-5 0"/></g></g>
+</svg><div class="scene-fade"></div></div>
+  <div class="fog" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="rain" aria-hidden="true"></div>
+
+  <!-- ===== Announcement ===== -->
+  <div class="announce-wrap">
+    <p class="announce" role="note">
+      <svg class="announce-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg>
+      <strong>New</strong><span class="dot">·</span>100% Free<span class="dot">·</span>No sign-up required
+    </p>
+  </div>
+
+  <!-- ===== Navigation ===== -->
+  <header class="nav">
+    <a class="logo" href="#top" aria-label="shURLock home">
+      <svg class="logo-glass" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="20" cy="20" r="13" class="lens"/>
+        <circle cx="20" cy="20" r="13" class="rim"/>
+        <path d="M30 30 L43 43" class="handle"/>
+        <path d="M13 15 Q16 10 22 10" class="glint"/>
+      </svg>
+      <span class="logo-word">sh<em>URL</em>ock</span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#tool">Investigate</a>
+      <a href="#case-files">Case Files</a>
+      <a href="#method">The Method</a>
+      <a href="#disclaimer">Disclaimer</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <!-- ===== Hero ===== -->
+    <section class="hero" id="hero">
+      <!-- hidden clues, revealed only under the magnifying glass -->
+      <div class="clues" aria-hidden="true">
+        <svg class="clue-art" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+          <g class="print" transform="translate(180 420) rotate(-18)">
+            <ellipse rx="40" ry="54"/><ellipse rx="33" ry="45"/><ellipse rx="26" ry="36"/><ellipse rx="19" ry="27"/><ellipse rx="12" ry="18"/><ellipse rx="5" ry="9"/>
+          </g>
+          <g class="print" transform="translate(960 150) rotate(24) scale(.8)">
+            <ellipse rx="40" ry="54"/><ellipse rx="33" ry="45"/><ellipse rx="26" ry="36"/><ellipse rx="19" ry="27"/><ellipse rx="12" ry="18"/><ellipse rx="5" ry="9"/>
+          </g>
+          <g class="steps">
+            <path d="M420 560 q10 -30 0 -50 q-14 20 0 50z"/><path d="M460 520 q10 -30 0 -50 q-14 20 0 50z"/>
+            <path d="M440 470 q10 -30 0 -50 q-14 20 0 50z"/><path d="M480 430 q10 -30 0 -50 q-14 20 0 50z"/>
+            <path d="M460 380 q10 -30 0 -50 q-14 20 0 50z"/>
+          </g>
+          <text x="90" y="140" class="note">The game is afoot.</text>
+          <text x="610" y="90" class="note">221B</text>
+          <text x="700" y="520" class="note">check the domain, Watson!</text>
+          <text x="140" y="270" class="note small">bit.ly → ? → paypa1.com ✗</text>
+          <text x="820" y="330" class="note small">Elementary.</text>
+          <path class="string" d="M300 120 L560 300 L880 210"/>
+          <circle class="pin" cx="300" cy="120" r="7"/><circle class="pin" cx="560" cy="300" r="7"/><circle class="pin" cx="880" cy="210" r="7"/>
+        </svg>
+      </div>
+      <div class="lens-cursor" aria-hidden="true"><span class="lens-handle"></span></div>
+
+      <div class="hero-copy">
+        <p class="eyebrow">Est. 221B · The consulting link detective</p>
+        <h1>Every long link<br>has a <span class="ink-flourish">short story.</span></h1>
+        <p class="lede">shURLock shortens your links, turns them into QR codes, and inspects every address
+          for disguises before it earns a place on Baker Street. Name your link whatever you like —
+          as long as it's honest.</p>
+        <p class="lede subtle">Move your magnifying glass over this page. Some clues are hidden.</p>
+        <div class="hero-actions">
+          <a class="btn btn-brass" href="#tool">Open a case</a>
+          <a class="btn btn-ghost" href="#case-files">View case files</a>
+        </div>
+      </div>
+
+      <!-- ===== The tool ===== -->
+      <div class="tool" id="tool">
+        <div class="tabs" role="tablist" aria-label="Choose a tool">
+          <button class="tab is-active" role="tab" id="tab-shorten" aria-selected="true" aria-controls="panel-shorten">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
+            Shorten a Link
+          </button>
+          <button class="tab" role="tab" id="tab-qr" aria-selected="false" aria-controls="panel-qr" tabindex="-1">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>
+            Generate QR Code
+          </button>
+        </div>
+
+        <!-- Shorten panel -->
+        <form class="panel" id="panel-shorten" role="tabpanel" aria-labelledby="tab-shorten" novalidate>
+          <label class="field-label" for="long-url">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/></svg>
+            The suspect link <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input class="input" id="long-url" name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+                 placeholder="Paste a long URL here" required>
+
+          <div class="row">
+            <div class="col">
+              <span class="field-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg>
+                Address
+              </span>
+              <div class="domain-chip" id="domain-chip" title="Every link lives at this address">shurlock/</div>
+            </div>
+            <div class="col grow">
+              <label class="field-label" for="alias">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg>
+                Custom ending <span class="opt">(optional)</span>
+              </label>
+              <input class="input" id="alias" name="alias" maxlength="30" autocomplete="off" spellcheck="false" placeholder="e.g. baker-street">
+            </div>
+          </div>
+          <p class="hint" id="alias-hint">5–30 characters: letters, numbers, - and _. No brand, bank, or login names.</p>
+          <p class="preview" id="alias-preview" aria-live="polite"></p>
+
+          <button class="btn btn-brass btn-block" type="submit" id="shorten-btn">
+            <span class="btn-label">Shorten Link</span>
+          </button>
+
+          <!-- Deduction report: each safety check animates in -->
+          <details class="deduction" id="deduction" hidden open>
+            <summary class="deduction-title" id="deduction-title">Deduction report</summary>
+            <ol class="deduction-list" id="deduction-list"></ol>
+          </details>
+
+          <!-- Result -->
+          <div class="result" id="result" hidden>
+            <p class="result-stamp">Case solved</p>
+            <a class="result-link" id="result-link" href="#" target="_blank" rel="noopener"></a>
+            <p class="result-original" id="result-original"></p>
+            <div class="actions" id="result-actions"></div>
+          </div>
+
+          <p class="fine-print">By shortening a link you agree to the <a href="#disclaimer">disclaimer</a> below.</p>
+        </form>
+
+        <!-- QR panel (separate tool) -->
+        <form class="panel" id="panel-qr" role="tabpanel" aria-labelledby="tab-qr" hidden novalidate>
+          <label class="field-label" for="qr-url">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/></svg>
+            Link for the QR code <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input class="input" id="qr-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste any URL here" required>
+
+          <div class="row">
+            <div class="col">
+              <span class="field-label">Ink</span>
+              <div class="swatches" role="radiogroup" aria-label="QR colour">
+                <button type="button" class="swatch is-active" role="radio" aria-checked="true" data-ink="#14181b" style="--sw:#14181b" aria-label="Ink black"></button>
+                <button type="button" class="swatch" role="radio" aria-checked="false" data-ink="#1f3a52" style="--sw:#1f3a52" aria-label="Midnight blue"></button>
+                <button type="button" class="swatch" role="radio" aria-checked="false" data-ink="#6e1d1d" style="--sw:#6e1d1d" aria-label="Oxblood"></button>
+                <button type="button" class="swatch" role="radio" aria-checked="false" data-ink="#2d4a35" style="--sw:#2d4a35" aria-label="Library green"></button>
+              </div>
+            </div>
+            <div class="col">
+              <label class="field-label" for="qr-size">Size</label>
+              <select class="input" id="qr-size">
+                <option value="256">Small</option>
+                <option value="512" selected>Medium</option>
+                <option value="1024">Large</option>
+              </select>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" id="qr-badge" checked> Stamp a magnifying glass in the centre</label>
+
+          <button class="btn btn-brass btn-block" type="submit">Generate QR Code</button>
+          <p class="error" id="qr-error" role="alert" hidden></p>
+
+          <div class="qr-result" id="qr-result" hidden>
+            <canvas id="qr-canvas" width="512" height="512" aria-label="Generated QR code"></canvas>
+            <div class="actions">
+              <button type="button" class="act" id="qr-download">Download PNG</button>
+              <button type="button" class="act" id="qr-copy">Copy link</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== Case files (recent & past links) ===== -->
+    <section class="case-files" id="case-files">
+      <div class="section-head">
+        <div>
+          <div class="flourish" aria-hidden="true"><span></span><svg viewBox="0 0 60 24"><path d="M30 2 L36 12 L30 22 L24 12Z"/><circle cx="8" cy="12" r="3"/><circle cx="52" cy="12" r="3"/></svg><span></span></div>
+          <p class="eyebrow">Your notebook</p>
+          <h2>Recent case files</h2>
+        </div>
+        <div class="case-tools">
+          <input class="input input-sm" id="case-search" type="search" placeholder="Search your links" aria-label="Search your links">
+          <button class="btn btn-ghost btn-sm" id="toggle-archive" type="button" aria-expanded="false">See all past links</button>
+          <button class="btn btn-ghost btn-sm danger" id="clear-history" type="button">Burn the notes</button>
+        </div>
+      </div>
+      <ul class="cases" id="cases" aria-live="polite"></ul>
+      <div class="empty" id="cases-empty">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="26" cy="26" r="16"/><path d="M38 38l16 16"/><path d="M20 22q4-6 12-4"/></svg>
+        <p>No cases yet. Shorten a link above and it'll be filed here.</p>
+      </div>
+    </section>
+
+    <!-- ===== The method ===== -->
+    <section class="method" id="method">
+      <div class="flourish" aria-hidden="true"><span></span><svg viewBox="0 0 60 24"><path d="M30 2 L36 12 L30 22 L24 12Z"/><circle cx="8" cy="12" r="3"/><circle cx="52" cy="12" r="3"/></svg><span></span></div>
+      <p class="eyebrow">How shURLock works</p>
+      <h2>The Method</h2>
+      <div class="steps-grid">
+        <article class="step">
+          <svg class="step-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M4 32 Q32 6 60 32 Q32 58 4 32Z"/><circle cx="32" cy="32" r="11"/><circle cx="32" cy="32" r="4" class="fill"/></svg><span class="step-num">I.</span>
+          <h3>Observe</h3>
+          <p>Paste a long link and, if you like, choose the ending. Every link lives at the shURLock address — only the end is yours to name.</p>
+        </article>
+        <article class="step">
+          <svg class="step-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="26" cy="26" r="17"/><path d="M38 38 L58 58" class="thick"/><path d="M17 20 q4 -7 12 -7"/></svg><span class="step-num">II.</span>
+          <h3>Deduce</h3>
+          <p>Before filing, we look for disguises: look-alike brands (<code>paypa1</code>, <code>gooogle</code>), hidden <code>user@</code> tricks, raw IP addresses, chained short links, foreign look-alike letters and program downloads.</p>
+        </article>
+        <article class="step">
+          <svg class="step-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="18" cy="32" r="11"/><circle cx="18" cy="32" r="4"/><path d="M29 32 H58 M50 32 v9 M42 32 v6"/></svg><span class="step-num">III.</span>
+          <h3>Conclude</h3>
+          <p>You get a short link to visit, copy, share, or turn into a QR code. Your past links stay in your case files on this device.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Footer + Sherlock ===== -->
+  <footer class="footer" id="disclaimer">
+    <div class="sherlock" id="sherlock" aria-hidden="false">
+      <div class="speech" id="speech" role="status" aria-live="polite"></div>
+      <button class="sherlock-btn" id="sherlock-btn" type="button" aria-label="Ask Sherlock for a word of wisdom">
+        <svg viewBox="0 0 260 200" class="sherlock-svg" aria-hidden="true">
+          <defs>
+            <pattern id="tweed" width="8" height="8" patternUnits="userSpaceOnUse">
+              <rect width="8" height="8" fill="#6f5b3c"/>
+              <path d="M0 0h4v4H0zM4 4h4v4H4z" fill="#5b4a30"/>
+              <path d="M0 4h1M4 0h1" stroke="#857049" stroke-width="1"/>
+            </pattern>
+            <clipPath id="above-ledge"><rect x="0" y="0" width="260" height="150"/></clipPath>
+          </defs>
+
+          <!-- smoke from the (hidden) pipe -->
+          <g class="smoke">
+            <path d="M196 148 q-10 -14 2 -26 q12 -12 0 -26"/>
+            <path d="M204 146 q10 -16 -2 -30 q-10 -12 4 -28"/>
+          </g>
+
+          <g clip-path="url(#above-ledge)">
+            <g class="peek">
+              <!-- ear flaps (tied up) -->
+              <path d="M80 92 q-12 10 -8 34 q10 4 16 -6z" fill="url(#tweed)" stroke="#1a1410" stroke-width="2.5"/>
+              <path d="M180 92 q12 10 8 34 q-10 4 -16 -6z" fill="url(#tweed)" stroke="#1a1410" stroke-width="2.5"/>
+              <!-- head -->
+              <ellipse cx="130" cy="124" rx="48" ry="56" fill="#ecd9ba" stroke="#1a1410" stroke-width="3"/>
+              <!-- deerstalker crown -->
+              <path d="M76 100 Q78 46 130 40 Q182 46 184 100 Q130 88 76 100Z" fill="url(#tweed)" stroke="#1a1410" stroke-width="3"/>
+              <path d="M130 41 V92" stroke="#3d311f" stroke-width="2" fill="none"/>
+              <!-- front peak -->
+              <path d="M82 99 Q130 84 178 99 Q170 112 130 108 Q90 112 82 99Z" fill="#5b4a30" stroke="#1a1410" stroke-width="3"/>
+              <!-- bow on top -->
+              <path d="M130 41 q-14 -12 -20 -2 q8 6 20 2z M130 41 q14 -12 20 -2 q-8 6 -20 2z" fill="#4a3c27" stroke="#1a1410" stroke-width="2"/>
+              <!-- brows (one raised: suspicious) -->
+              <path class="brow" d="M98 118 q12 -9 24 -2" stroke="#1a1410" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path class="brow brow-raised" d="M140 112 q12 -8 24 2" stroke="#1a1410" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <!-- eyes -->
+              <ellipse cx="111" cy="132" rx="11" ry="9" fill="#fbf6ea" stroke="#1a1410" stroke-width="2.5"/>
+              <ellipse cx="151" cy="132" rx="11" ry="9" fill="#fbf6ea" stroke="#1a1410" stroke-width="2.5"/>
+              <circle class="pupil" cx="111" cy="133" r="4.5" fill="#1a1410"/>
+              <circle class="pupil" cx="151" cy="133" r="4.5" fill="#1a1410"/>
+              <path class="lid" d="M100 132 q11 -11 22 0" fill="#ecd9ba" stroke="none"/>
+              <path class="lid" d="M140 132 q11 -11 22 0" fill="#ecd9ba" stroke="none"/>
+            </g>
+          </g>
+
+          <!-- the ledge he's holding onto -->
+          <rect x="0" y="148" width="260" height="5" fill="#c9a24a"/>
+
+          <!-- the famous nose, hanging over the ledge -->
+          <path class="nose" d="M127 128 Q122 146 119 160 Q118 172 130 171 Q140 170 138 159 Q136 146 133 128" fill="#ecd9ba" stroke="#1a1410" stroke-width="3" stroke-linejoin="round"/>
+
+          <!-- fingers gripping the edge -->
+          <g class="hand" fill="#ecd9ba" stroke="#1a1410" stroke-width="2.6">
+            <path d="M38 147 q0 -8 7 -8 q7 0 7 8 v20 q0 7 -7 7 q-7 0 -7 -7z"/>
+            <path d="M52 146 q0 -9 7 -9 q7 0 7 9 v24 q0 7 -7 7 q-7 0 -7 -7z"/>
+            <path d="M66 146 q0 -9 7 -9 q7 0 7 9 v23 q0 7 -7 7 q-7 0 -7 -7z"/>
+            <path d="M80 147 q0 -8 7 -8 q7 0 7 8 v19 q0 7 -7 7 q-7 0 -7 -7z"/>
+          </g>
+          <g class="hand" fill="#ecd9ba" stroke="#1a1410" stroke-width="2.6">
+            <path d="M166 147 q0 -8 7 -8 q7 0 7 8 v19 q0 7 -7 7 q-7 0 -7 -7z"/>
+            <path d="M180 146 q0 -9 7 -9 q7 0 7 9 v23 q0 7 -7 7 q-7 0 -7 -7z"/>
+            <path d="M194 146 q0 -9 7 -9 q7 0 7 9 v24 q0 7 -7 7 q-7 0 -7 -7z"/>
+            <path d="M208 147 q0 -8 7 -8 q7 0 7 8 v20 q0 7 -7 7 q-7 0 -7 -7z"/>
+          </g>
+        </svg>
+      </button>
+    </div>
+
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-word">sh<em>URL</em>ock</span>
+        <p>“You see, but you do not observe.” <span class="cite">— A Scandal in Bohemia</span></p>
+        <p class="mode" id="mode-badge">Determining the mode of operation…</p>
+      </div>
+      <div class="disclaimer">
+        <h2>Disclaimer</h2>
+        <p>shURLock is a free, independent learning project provided “as is”, without warranties of any kind.
+          Every link is screened for common disguises, but no automated check can guarantee that a destination is safe —
+          always look before you click, and never enter passwords or payment details on a page you reached through a short link
+          unless you trust where it came from.</p>
+        <p>Do not use shURLock to shorten illegal, harmful, deceptive or abusive content; links that break these rules
+          may be removed without notice. Links and history are stored in your browser (and on the shURLock server when one is running);
+          clearing your browser data removes them. QR codes are generated in your browser.</p>
+        <p>shURLock is not affiliated with TinyURL, any other link shortener, or any Sherlock Holmes film, television,
+          or publishing rights holder. Sir Arthur Conan Doyle's original Holmes stories are in the public domain.
+          “QR Code” is a registered trademark of DENSO WAVE INCORPORATED.</p>
+        <p class="copyright">© 2026 shURLock · Made at 221B Baker Street (in spirit)</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- QR modal -->
+  <dialog class="modal" id="qr-modal" aria-labelledby="qr-modal-title">
+    <form method="dialog" class="modal-inner">
+      <h3 id="qr-modal-title">QR code</h3>
+      <p class="modal-sub" id="qr-modal-link"></p>
+      <canvas id="qr-modal-canvas" width="320" height="320"></canvas>
+      <div class="actions">
+        <button type="button" class="act" id="qr-modal-download">Download PNG</button>
+        <button class="act act-dark" value="close">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Share modal (fallback when the device has no share sheet) -->
+  <dialog class="modal" id="share-modal" aria-labelledby="share-title">
+    <form method="dialog" class="modal-inner">
+      <h3 id="share-title">Share this link</h3>
+      <p class="modal-sub" id="share-link"></p>
+      <div class="share-grid" id="share-grid"></div>
+      <div class="actions"><button class="act act-dark" value="close">Close</button></div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script>
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+  <script>
+/*
+ * shURLock — The Rules of Deduction
+ * ---------------------------------
+ * Shared by the browser (window.ShurlockRules) and the Node server (require()).
+ * Every link is "interrogated" by a list of checks. A failed check blocks the
+ * link; a "warn" check lets it through but tells the user what looked odd.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.ShurlockRules = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  // Other link shorteners — chaining shorteners is a classic way to hide a destination.
+  const SHORTENERS = [
+    'bit.ly', 'bitly.com', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'v.gd',
+    'buff.ly', 'rebrand.ly', 'cutt.ly', 'shorturl.at', 'tiny.cc', 'rb.gy', 'bl.ink',
+    's.id', 'lnkd.in', 'shorte.st', 'adf.ly', 'bc.vc', 'soo.gd', 'clck.ru', 'qr.ae',
+    'tr.im', 'x.co', 'po.st', 'mcaf.ee', 'su.pr', 'shrtco.de', 'tiny.one', 'urlzs.com'
+  ];
+
+  // Brands phishers love to impersonate, with the domains that genuinely belong to them.
+  const BRANDS = {
+    paypal: ['paypal.com', 'paypal.me', 'paypalobjects.com'],
+    google: ['google.com', 'googleapis.com', 'googleusercontent.com', 'gstatic.com', 'youtube.com', 'withgoogle.com', 'blog.google'],
+    microsoft: ['microsoft.com', 'live.com', 'outlook.com', 'office.com', 'microsoftonline.com', 'bing.com', 'azure.com'],
+    amazon: ['amazon.com', 'amazonaws.com', 'amzn.to', 'a2z.com', 'aws.amazon.com'],
+    apple: ['apple.com', 'icloud.com', 'apple.news'],
+    netflix: ['netflix.com', 'nflxext.com'],
+    facebook: ['facebook.com', 'fb.com', 'fb.me', 'meta.com'],
+    instagram: ['instagram.com'],
+    whatsapp: ['whatsapp.com', 'wa.me'],
+    coinbase: ['coinbase.com'],
+    binance: ['binance.com', 'binance.us'],
+    metamask: ['metamask.io'],
+    wellsfargo: ['wellsfargo.com'],
+    bankofamerica: ['bankofamerica.com'],
+    chase: ['chase.com'],
+    usps: ['usps.com'],
+    fedex: ['fedex.com'],
+    irs: ['irs.gov'],
+    roblox: ['roblox.com'],
+    discord: ['discord.com', 'discord.gg', 'discordapp.com'],
+    steam: ['steampowered.com', 'steamcommunity.com'],
+    venmo: ['venmo.com'],
+    cashapp: ['cash.app']
+  };
+
+  // Words that, stuck onto a brand or stacked together in a hostname, smell of phishing.
+  const BAIT_WORDS = [
+    'login', 'logon', 'signin', 'verify', 'verification', 'secure', 'security', 'account',
+    'accounts', 'update', 'support', 'helpdesk', 'billing', 'wallet', 'recovery', 'unlock',
+    'confirm', 'auth', 'password', 'reset', 'suspended', 'refund', 'invoice', 'giveaway', 'claim'
+  ];
+
+  const COMMON_TLDS = ['com', 'net', 'org', 'co', 'io', 'us', 'uk', 'ca', 'de', 'fr', 'es', 'it',
+    'nl', 'se', 'no', 'dk', 'fi', 'pl', 'ie', 'au', 'nz', 'jp', 'in', 'br', 'mx', 'ar', 'ch', 'at', 'be'];
+
+  // TLDs that look like file names in a message ("invoice.zip") — confusing by design.
+  const CONFUSING_TLDS = ['zip', 'mov'];
+
+  const DANGEROUS_FILES = /\.(exe|scr|bat|cmd|msi|vbs|vbe|ps1|jar|apk|pif|hta|cpl|reg|wsf|lnk)$/i;
+  const INVISIBLE_CHARS = /[​-‏‪-‮⁠-⁤⁦-⁩﻿]/;
+
+  const RESERVED_ALIASES = ['api', 'admin', 'assets', 'css', 'js', 'img', 'images', 'vendor',
+    'static', 'index', 'health', 'favicon', 'robots', 'sitemap', 'about', 'shurlock',
+    'preview', 'login', 'logout', 'signup', 'settings', 'null', 'undefined', '404'];
+
+  // Aliases may not pretend to be a bank, a login page, or a brand.
+  const MISLEADING_ALIAS = new RegExp('(' + [
+    'login', 'signin', 'logon', 'verify', 'password', 'passwd', 'account', 'bank', 'wallet',
+    'secure', 'support', 'invoice', 'refund', 'giveaway', 'freemoney', 'free-money', 'crypto',
+    'irs', 'usps', 'fedex', 'paypal', 'apple', 'google', 'microsoft', 'amazon', 'netflix',
+    'facebook', 'instagram', 'coinbase', 'binance', 'venmo', 'cashapp', 'chase', 'wellsfargo'
+  ].join('|') + ')', 'i');
+
+  const RUDE = /(fuck|shit|bitch|cunt|nigg|fag|whore|slut|rape|nazi|kkk)/i;
+
+  // ---------- helpers ----------
+  function registrableDomain(host) {
+    const labels = host.split('.');
+    if (labels.length >= 3) {
+      const tld = labels[labels.length - 1];
+      const second = labels[labels.length - 2];
+      if (tld.length === 2 && ['co', 'com', 'org', 'net', 'gov', 'ac', 'edu', 'ne', 'or'].includes(second)) {
+        return labels.slice(-3).join('.');
+      }
+    }
+    return labels.slice(-2).join('.');
+  }
+
+  // Undo the usual disguises: digits and letter-pairs standing in for letters.
+  function unmask(token) {
+    return token
+      .replace(/rn/g, 'm').replace(/vv/g, 'w')
+      .replace(/0/g, 'o').replace(/1/g, 'l').replace(/3/g, 'e')
+      .replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't').replace(/\$/g, 's');
+  }
+  const collapse = (s) => s.replace(/(.)\1+/g, '$1'); // "gooogle" -> "gogle"
+
+  function isOfficial(host, brand) {
+    const reg = registrableDomain(host);
+    const official = BRANDS[brand];
+    if (official.some((d) => host === d || host.endsWith('.' + d))) return true;
+    // e.g. amazon.co.uk, google.de — the brand's own name on a normal country domain
+    const sld = reg.split('.')[0];
+    const suffix = reg.slice(sld.length + 1).split('.');
+    return sld === brand && suffix.every((p) => COMMON_TLDS.includes(p));
+  }
+
+  function findImpersonation(host) {
+    const tokens = host.split(/[.-]/).filter(Boolean);
+    const hasBait = tokens.some((t) => BAIT_WORDS.includes(t));
+    for (const brand of Object.keys(BRANDS)) {
+      if (isOfficial(host, brand)) continue;
+      for (const raw of tokens) {
+        const t = unmask(raw);
+        if (t === brand && raw !== brand) return { brand, how: 'disguises "' + brand + '" with look-alike characters' };
+        if (t !== brand && t.length > 3 && collapse(t) === collapse(brand)) return { brand, how: 'is a misspelling of "' + brand + '"' };
+        if (t === brand && (brand.length >= 6 || hasBait)) return { brand, how: 'uses the name "' + brand + '" but is not ' + brand + "'s official site" };
+        if (t !== brand && t.length > brand.length && (t.startsWith(brand) || t.endsWith(brand))) {
+          const rest = t.startsWith(brand) ? t.slice(brand.length) : t.slice(0, -brand.length);
+          if (BAIT_WORDS.includes(rest)) return { brand, how: 'glues "' + brand + '" to "' + rest + '"' };
+        }
+      }
+    }
+    return null;
+  }
+
+  // ---------- the interrogation ----------
+  /**
+   * inspectUrl(input, { selfHosts: ['shurlock.example'] })
+   * -> { ok, url, host, errors[], warnings[], checks[{label, status:'pass'|'fail'|'warn', note}] }
+   */
+  function inspectUrl(input, opts) {
+    opts = opts || {};
+    const checks = [];
+    const add = (label, status, note) => checks.push({ label, status, note: note || '' });
+    const result = (url, host) => {
+      const errors = checks.filter((c) => c.status === 'fail').map((c) => c.note);
+      const warnings = checks.filter((c) => c.status === 'warn').map((c) => c.note);
+      return { ok: errors.length === 0, url: url || null, host: host || null, errors, warnings, checks };
+    };
+
+    let raw = String(input == null ? '' : input).trim();
+    if (!raw) { add('A link was provided', 'fail', 'Paste a link to investigate.'); return result(); }
+
+    if (INVISIBLE_CHARS.test(raw)) {
+      add('No hidden characters', 'fail', 'The link contains invisible or text-reversing characters — a known disguise.');
+      return result();
+    }
+    add('No hidden characters', 'pass');
+
+    if (raw.length > 2048) { add('Reasonable length', 'fail', 'That link is longer than 2,048 characters.'); return result(); }
+
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = 'https://' + raw; // "example.com" -> "https://example.com"
+
+    let u;
+    try { u = new URL(raw); } catch (e) {
+      add('Looks like a real web address', 'fail', 'That doesn\'t look like a valid web address.');
+      return result();
+    }
+
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') {
+      add('Uses http or https', 'fail', 'Only http:// and https:// links are allowed (no ' + u.protocol.replace(':', '') + ': links).');
+      return result();
+    }
+    add('Uses http or https', u.protocol === 'https:' ? 'pass' : 'warn',
+      u.protocol === 'https:' ? '' : 'This link isn\'t encrypted (http, not https).');
+
+    if (u.username || u.password) {
+      add('No hidden "user@" trick', 'fail', 'The link hides its real destination behind an "@" sign.');
+      return result(u.href);
+    }
+    add('No hidden "user@" trick', 'pass');
+
+    const host = u.hostname.toLowerCase().replace(/\.$/, '');
+
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('[') || host.includes(':')) {
+      add('Uses a domain name, not a bare IP', 'fail', 'Links to raw IP addresses aren\'t allowed — real sites use names.');
+      return result(u.href, host);
+    }
+    if (!/^[a-z0-9.-]+\.[a-z]{2,63}$/.test(host) || host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) {
+      add('Uses a domain name, not a bare IP', 'fail', 'That isn\'t a public website address.');
+      return result(u.href, host);
+    }
+    add('Uses a domain name, not a bare IP', 'pass');
+
+    const punycode = host.split('.').some((l) => l.startsWith('xn--'));
+    add('No look-alike alphabet tricks', punycode ? 'fail' : 'pass',
+      punycode ? 'The domain uses foreign look-alike letters (punycode), a common impersonation trick.' : '');
+
+    const tld = host.split('.').pop();
+    add('Not a file-name-style domain', CONFUSING_TLDS.includes(tld) ? 'fail' : 'pass',
+      CONFUSING_TLDS.includes(tld) ? 'Domains ending in .' + tld + ' are easily mistaken for files.' : '');
+
+    const reg = registrableDomain(host);
+    const self = (opts.selfHosts || []).map((h) => h.toLowerCase());
+    const isShortener = SHORTENERS.includes(reg) || SHORTENERS.includes(host) || self.includes(host);
+    add('Not another short link', isShortener ? 'fail' : 'pass',
+      isShortener ? 'That\'s already a short link. Paste the real destination so nothing is hidden.' : '');
+
+    const impostor = findImpersonation(host);
+    add('Not impersonating a brand', impostor ? 'fail' : 'pass',
+      impostor ? 'This domain ' + impostor.how + '.' : '');
+
+    const tokens = host.split(/[.-]/);
+    const baitCount = tokens.filter((t) => BAIT_WORDS.includes(t)).length;
+    const subdomains = host.split('.').length - reg.split('.').length;
+    const hyphens = (host.match(/-/g) || []).length;
+    const suspiciousShape = baitCount >= 2 || subdomains > 4 || hyphens >= 4;
+    add('Domain shape looks honest', suspiciousShape ? 'fail' : 'pass',
+      suspiciousShape ? 'The domain is stuffed with words like "secure"/"login", extra subdomains, or hyphens.' : '');
+
+    const dangerousFile = DANGEROUS_FILES.test(u.pathname);
+    add('Not a direct program download', dangerousFile ? 'fail' : 'pass',
+      dangerousFile ? 'Links that directly download programs (.exe, .apk, .bat…) aren\'t allowed.' : '');
+
+    if (u.port && u.port !== '80' && u.port !== '443') add('Standard port', 'warn', 'Uses an unusual port (' + u.port + ').');
+
+    if (/=https?(:|%3A)/i.test(u.search)) add('No link-inside-a-link', 'warn', 'This link carries another web address inside it — check where it really ends up.');
+
+    if (opts.blocklist && opts.blocklist.some((d) => host === d || host.endsWith('.' + d))) {
+      add('Not on the blocklist', 'fail', 'This domain is on the shURLock blocklist.');
+    }
+
+    return result(u.href, host);
+  }
+
+  /** checkAlias(alias) -> { ok, alias (normalized, lowercase), errors[] } */
+  function checkAlias(input) {
+    const alias = String(input == null ? '' : input).trim();
+    const errors = [];
+    if (!alias) return { ok: true, alias: '', errors };
+    if (alias.length < 5) errors.push('Aliases need at least 5 characters.');
+    if (alias.length > 30) errors.push('Aliases can be at most 30 characters.');
+    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) errors.push('Use only letters, numbers, hyphens (-) and underscores (_).');
+    else if (!/^[a-zA-Z0-9].*[a-zA-Z0-9]$/.test(alias)) errors.push('Start and end the alias with a letter or number.');
+    const lower = alias.toLowerCase();
+    if (RESERVED_ALIASES.includes(lower)) errors.push('"' + alias + '" is reserved — try another.');
+    if (MISLEADING_ALIAS.test(lower.replace(/[_-]/g, ''))) errors.push('Aliases can\'t look like a login, bank, or brand page — that could mislead people.');
+    if (RUDE.test(unmask(lower))) errors.push('Let\'s keep Baker Street civil — choose a different alias.');
+    return { ok: errors.length === 0, alias: lower, errors };
+  }
+
+  return { inspectUrl, checkAlias, registrableDomain, SHORTENERS, BRANDS };
+});
+
+</script>
+  <script>
+/*
+ * shURLock — front-end logic
+ *
+ * Two modes, chosen automatically:
+ *   SERVER mode  – server.js is running: links are saved in data/links.json and work for everyone.
+ *   POCKET mode  – static hosting (e.g. GitHub Pages): links are saved in this browser's
+ *                  localStorage, and 404.html performs the redirect on this device.
+ */
+(() => {
+  'use strict';
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const Rules = window.ShurlockRules;
+
+  // ---------- storage (wrapped: private windows can throw) ----------
+  const store = {
+    get(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+    set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch { return false; } }
+  };
+  const K = { registry: 'shurlock:registry', history: 'shurlock:history' };
+
+  // ---------- where do links live? ----------
+  const basePath = location.pathname.replace(/[^/]*$/, ''); // "/shurlock/" on GitHub Pages, "/" on the server
+  let mode = 'pocket';
+  const linkBase = () => location.origin + (mode === 'server' ? '/' : basePath);
+  const shortUrlFor = (code) => linkBase() + code;
+
+  async function detectMode() {
+    if (location.protocol === 'file:') return 'pocket';
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 1500);
+      const res = await fetch(basePath + 'api/health', { cache: 'no-store', signal: ctrl.signal });
+      clearTimeout(t);
+      const data = res.ok ? await res.json() : null;
+      return data && data.mode === 'server' ? 'server' : 'pocket';
+    } catch { return 'pocket'; }
+  }
+
+  // ---------- toasts ----------
+  function toast(msg, bad) {
+    const el = document.createElement('div');
+    el.className = 'toast' + (bad ? ' bad' : '');
+    el.textContent = msg;
+    $('#toasts').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    toast('Elementary! Link copied.');
+  }
+
+  // ---------- icons ----------
+  const ICON = {
+    visit: '<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+    qr: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>',
+    share: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>',
+    copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+    trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>'
+  };
+
+  function actionButtons(link, { dark = false, withDelete = false } = {}) {
+    const wrap = document.createElement('div');
+    wrap.className = 'actions';
+    const mk = (label, icon, cls, onClick) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'act ' + cls;
+      b.innerHTML = ICON[icon] + '<span>' + label + '</span>';
+      b.addEventListener('click', onClick);
+      wrap.appendChild(b);
+    };
+    mk('Visit URL', 'visit', '', () => window.open(link.shortUrl, '_blank', 'noopener'));
+    mk('QR', 'qr', '', () => openQrModal(link.shortUrl));
+    mk('Share', 'share', '', () => share(link.shortUrl));
+    mk('Copy', 'copy', dark ? '' : 'act-dark', () => copyText(link.shortUrl));
+    if (withDelete) mk('', 'trash', 'delete', () => removeFromHistory(link.code));
+    wrap.lastChild.setAttribute('aria-label', withDelete ? 'Remove from case files' : 'Copy');
+    return wrap;
+  }
+
+  // ---------- tabs ----------
+  const tabs = [$('#tab-shorten'), $('#tab-qr')];
+  function selectTab(tab) {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      $('#' + t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t));
+    t.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = tabs[(i + 1) % 2]; selectTab(n); n.focus(); }
+    });
+  });
+
+  // ---------- live alias preview ----------
+  const urlInput = $('#long-url');
+  const aliasInput = $('#alias');
+  const preview = $('#alias-preview');
+  function updateAliasPreview() {
+    const raw = aliasInput.value.trim();
+    aliasInput.classList.remove('is-bad', 'is-good');
+    if (!raw) { preview.textContent = ''; preview.classList.remove('bad'); return; }
+    const check = Rules.checkAlias(raw);
+    const taken = check.ok && mode === 'pocket' && store.get(K.registry, {})[check.alias];
+    if (!check.ok || taken) {
+      preview.textContent = '✗ ' + (taken ? 'That alias is already taken.' : check.errors[0]);
+      preview.classList.add('bad'); aliasInput.classList.add('is-bad');
+    } else {
+      preview.textContent = '✓ ' + shortUrlFor(check.alias);
+      preview.classList.remove('bad'); aliasInput.classList.add('is-good');
+    }
+  }
+  aliasInput.addEventListener('input', updateAliasPreview);
+  urlInput.addEventListener('input', () => urlInput.classList.remove('is-bad'));
+
+  // ---------- deduction report ----------
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function showDeduction(checks) {
+    const box = $('#deduction');
+    const list = $('#deduction-list');
+    list.innerHTML = '';
+    box.hidden = false; box.open = true;
+    $('#deduction-title').textContent = 'Deduction report';
+    for (const c of checks) {
+      const li = document.createElement('li');
+      li.className = c.status;
+      const mark = c.status === 'pass' ? '✓' : c.status === 'warn' ? '!' : '✗';
+      li.innerHTML = '<span class="mark"></span><span></span>';
+      li.firstChild.textContent = mark;
+      li.lastChild.textContent = c.label;
+      if (c.note) { const s = document.createElement('small'); s.textContent = c.note; li.lastChild.appendChild(s); }
+      list.appendChild(li);
+      await sleep(c.status === 'pass' ? 90 : 220);
+    }
+  }
+
+  // ---------- create a link ----------
+  const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  function randomCode(len = 6) {
+    const bytes = crypto.getRandomValues(new Uint8Array(len));
+    return Array.from(bytes, (b) => ALPHABET[b % 36]).join('');
+  }
+
+  async function createLink(url, alias) {
+    if (mode === 'server') {
+      const res = await fetch('/api/links', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, alias })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      return { ...data, shortUrl: shortUrlFor(data.code) };
+    }
+    const registry = store.get(K.registry, {});
+    if (alias && registry[alias]) throw new Error('That alias is already taken — choose another.');
+    let code = alias;
+    while (!code || registry[code]) code = randomCode();
+    const link = { code, url, createdAt: new Date().toISOString(), custom: Boolean(alias) };
+    registry[code] = link;
+    if (!store.set(K.registry, registry)) throw new Error('Your browser is blocking storage (private mode?), so links can\'t be saved.');
+    return { ...link, shortUrl: shortUrlFor(code) };
+  }
+
+  const form = $('#panel-shorten');
+  const btn = $('#shorten-btn');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (btn.disabled) return;
+    $('#result').hidden = true;
+
+    const report = Rules.inspectUrl(urlInput.value, { selfHosts: [location.hostname] });
+    const alias = Rules.checkAlias(aliasInput.value);
+    if (!alias.ok) report.checks.push({ label: 'Custom ending is acceptable', status: 'fail', note: alias.errors[0] });
+    else if (alias.alias) report.checks.push({ label: 'Custom ending is acceptable', status: 'pass', note: '' });
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="searching" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/></svg><span class="btn-label">Investigating…</span>';
+    await showDeduction(report.checks);
+
+    try {
+      const failed = report.checks.find((c) => c.status === 'fail');
+      if (failed) {
+        urlInput.classList.toggle('is-bad', failed.label !== 'Custom ending is acceptable');
+        sherlock.say(pick(SUSPICIOUS), true);
+        toast(failed.note, true);
+        return;
+      }
+      const link = await createLink(report.url, alias.alias);
+      const passed = report.checks.filter((c) => c.status !== 'fail').length;
+      $('#deduction-title').textContent = 'Deduction report — ' + passed + ' of ' + report.checks.length + ' checks passed (tap to review)';
+      $('#deduction').open = false;
+      addToHistory(link);
+      showResult(link);
+      if (report.warnings.length) toast('Filed, with a note: ' + report.warnings[0]);
+      sherlock.say(pick(SOLVED));
+      urlInput.value = ''; aliasInput.value = ''; updateAliasPreview();
+    } catch (err) {
+      toast(err.message, true);
+      sherlock.say('Hmm. ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-label">Shorten Link</span>';
+    }
+  });
+
+  function showResult(link) {
+    const box = $('#result');
+    const a = $('#result-link');
+    a.href = link.shortUrl; a.textContent = link.shortUrl;
+    $('#result-original').textContent = '→ ' + link.url;
+    const acts = $('#result-actions');
+    acts.replaceWith(Object.assign(actionButtons(link, { dark: true }), { id: 'result-actions' }));
+    box.hidden = false;
+  }
+
+  // ---------- history / case files ----------
+  let showAll = false;
+  const RECENT = 5;
+  const history = () => store.get(K.history, []);
+
+  function addToHistory(link) {
+    const list = history().filter((l) => l.code !== link.code);
+    list.unshift({ code: link.code, url: link.url, shortUrl: link.shortUrl, createdAt: link.createdAt, clicks: link.clicks, mode });
+    store.set(K.history, list.slice(0, 500));
+    renderCases();
+  }
+  function removeFromHistory(code) {
+    store.set(K.history, history().filter((l) => l.code !== code));
+    renderCases();
+    toast('Case file removed from your notebook.');
+  }
+
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
+  function renderCases() {
+    const q = $('#case-search').value.trim().toLowerCase();
+    const all = history();
+    let list = q ? all.filter((l) => (l.shortUrl + ' ' + l.url).toLowerCase().includes(q)) : all;
+    const total = list.length;
+    if (!showAll && !q) list = list.slice(0, RECENT);
+
+    const ul = $('#cases');
+    ul.innerHTML = '';
+    list.forEach((link) => {
+      const n = all.length - all.indexOf(link);
+      const li = document.createElement('li');
+      li.className = 'case';
+      li.innerHTML = '<div class="case-no">No.<b></b></div><div class="case-main"><a class="case-short" target="_blank" rel="noopener"></a><p class="case-long"></p><p class="case-meta"></p></div>';
+      $('b', li).textContent = String(n).padStart(3, '0');
+      const a = $('.case-short', li); a.href = link.shortUrl; a.textContent = link.shortUrl.replace(/^https?:\/\//, '');
+      $('.case-long', li).textContent = link.url; $('.case-long', li).title = link.url;
+      $('.case-meta', li).textContent = 'Filed ' + fmtDate(link.createdAt) +
+        (typeof link.clicks === 'number' && link.mode === 'server' ? ' · ' + link.clicks + ' visit' + (link.clicks === 1 ? '' : 's') : '');
+      li.appendChild(actionButtons(link, { withDelete: true }));
+      ul.appendChild(li);
+    });
+
+    $('#cases-empty').hidden = all.length > 0 && list.length > 0;
+    if (all.length && !list.length) $('#cases-empty p').textContent = 'No case files match that search.';
+    else $('#cases-empty p').textContent = 'No cases yet. Shorten a link above and it\'ll be filed here.';
+
+    const toggle = $('#toggle-archive');
+    toggle.hidden = all.length <= RECENT || Boolean(q);
+    toggle.textContent = showAll ? 'Show recent only' : 'See all past links (' + total + ')';
+    toggle.setAttribute('aria-expanded', showAll);
+    $('#clear-history').hidden = all.length === 0;
+  }
+
+  $('#case-search').addEventListener('input', renderCases);
+  $('#toggle-archive').addEventListener('click', () => { showAll = !showAll; renderCases(); });
+  $('#clear-history').addEventListener('click', () => {
+    if (!confirm('Burn all your case notes? This only clears the list on this device.')) return;
+    store.set(K.history, []);
+    renderCases();
+    toast('The notes are ashes.');
+  });
+
+  // refresh visit counts from the server
+  async function refreshClicks() {
+    const list = history();
+    const mine = list.filter((l) => l.mode === 'server').slice(0, 20);
+    await Promise.all(mine.map(async (l) => {
+      try { const r = await fetch('/api/links/' + l.code); if (r.ok) l.clicks = (await r.json()).clicks; } catch { /* ignore */ }
+    }));
+    store.set(K.history, list);
+    renderCases();
+  }
+
+  // ---------- QR codes ----------
+  function drawQR(canvas, text, { ink = '#14181b', size = 512, badge = true } = {}) {
+    if (typeof qrcode !== 'function') throw new Error('QR engine failed to load.');
+    qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    const qr = qrcode(0, badge ? 'H' : 'M'); // 'H' survives the centre stamp
+    qr.addData(text); qr.make();
+    const n = qr.getModuleCount();
+    const quiet = 4;
+    const cell = size / (n + quiet * 2);
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f6efdf'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = ink;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c)) ctx.fillRect(Math.floor((c + quiet) * cell), Math.floor((r + quiet) * cell), Math.ceil(cell), Math.ceil(cell));
+    }
+    if (badge) {
+      const cx = size / 2, cy = size / 2, R = size * 0.085;
+      ctx.fillStyle = '#f6efdf';
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = ink; ctx.lineCap = 'round';
+      ctx.lineWidth = R * 0.28;
+      ctx.beginPath(); ctx.arc(cx - R * 0.18, cy - R * 0.18, R * 0.62, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = R * 0.36;
+      ctx.beginPath(); ctx.moveTo(cx + R * 0.3, cy + R * 0.3); ctx.lineTo(cx + R * 0.82, cy + R * 0.82); ctx.stroke();
+    }
+  }
+  function downloadCanvas(canvas, name) {
+    const a = document.createElement('a');
+    a.download = name; a.href = canvas.toDataURL('image/png'); a.click();
+  }
+  const slug = (url) => url.replace(/^https?:\/\//, '').replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
+
+  // QR tab (its own tool)
+  let ink = '#14181b';
+  document.querySelectorAll('.swatch').forEach((s) => s.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach((o) => { o.classList.toggle('is-active', o === s); o.setAttribute('aria-checked', o === s); });
+    ink = s.dataset.ink;
+    if (!$('#qr-result').hidden) $('#panel-qr').requestSubmit();
+  }));
+  let qrUrl = '';
+  $('#panel-qr').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const err = $('#qr-error');
+    const report = Rules.inspectUrl($('#qr-url').value);
+    if (!report.ok) {
+      err.textContent = report.errors[0]; err.hidden = false; $('#qr-result').hidden = true;
+      $('#qr-url').classList.add('is-bad');
+      sherlock.say(pick(SUSPICIOUS), true);
+      return;
+    }
+    err.hidden = true; $('#qr-url').classList.remove('is-bad');
+    qrUrl = report.url;
+    try {
+      drawQR($('#qr-canvas'), qrUrl, { ink, size: Number($('#qr-size').value), badge: $('#qr-badge').checked });
+      $('#qr-result').hidden = false;
+    } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+  });
+  $('#qr-size').addEventListener('change', () => { if (!$('#qr-result').hidden) $('#panel-qr').requestSubmit(); });
+  $('#qr-badge').addEventListener('change', () => { if (!$('#qr-result').hidden) $('#panel-qr').requestSubmit(); });
+  $('#qr-download').addEventListener('click', () => downloadCanvas($('#qr-canvas'), 'shurlock-qr-' + slug(qrUrl) + '.png'));
+  $('#qr-copy').addEventListener('click', () => copyText(qrUrl));
+
+  // QR modal for a short link
+  let modalUrl = '';
+  function openQrModal(url) {
+    modalUrl = url;
+    $('#qr-modal-link').textContent = url;
+    try { drawQR($('#qr-modal-canvas'), url, { size: 640 }); } catch (e) { return toast(e.message, true); }
+    $('#qr-modal').showModal();
+  }
+  $('#qr-modal-download').addEventListener('click', () => downloadCanvas($('#qr-modal-canvas'), 'shurlock-qr-' + slug(modalUrl) + '.png'));
+
+  // ---------- share ----------
+  async function share(url) {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'A link from shURLock', url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const enc = encodeURIComponent(url);
+    const text = encodeURIComponent('Have a look at this: ');
+    const targets = [
+      ['Email', 'mailto:?subject=' + encodeURIComponent('A link for you') + '&body=' + text + enc],
+      ['WhatsApp', 'https://wa.me/?text=' + text + enc],
+      ['X / Twitter', 'https://twitter.com/intent/tweet?url=' + enc],
+      ['Facebook', 'https://www.facebook.com/sharer/sharer.php?u=' + enc],
+      ['Reddit', 'https://www.reddit.com/submit?url=' + enc],
+      ['LinkedIn', 'https://www.linkedin.com/sharing/share-offsite/?url=' + enc]
+    ];
+    const grid = $('#share-grid');
+    grid.innerHTML = '';
+    targets.forEach(([name, href]) => {
+      const a = document.createElement('a');
+      a.className = 'act'; a.textContent = name; a.href = href; a.target = '_blank'; a.rel = 'noopener';
+      grid.appendChild(a);
+    });
+    $('#share-link').textContent = url;
+    $('#share-modal').showModal();
+  }
+
+  // ---------- the magnifying glass ----------
+  const hero = $('#hero');
+  const clues = $('.clues');
+  const lens = $('.lens-cursor');
+  function placeLens(x, y) {
+    clues.style.setProperty('--x', x + 'px');
+    clues.style.setProperty('--y', y + 'px');
+    const w = lens.offsetWidth;
+    lens.style.transform = `translate(${x - w / 2}px, ${y - w / 2}px)`;
+  }
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (finePointer) {
+    hero.addEventListener('pointermove', (e) => {
+      if (e.target.closest('.tool')) { hero.classList.remove('lens-on'); placeLens(-400, -400); return; }
+      const r = hero.getBoundingClientRect();
+      hero.classList.add('lens-on');
+      placeLens(e.clientX - r.left, e.clientY - r.top);
+    });
+    hero.addEventListener('pointerleave', () => { hero.classList.remove('lens-on'); placeLens(-400, -400); });
+  } else if (!reduceMotion) {
+    // touch screens: the glass wanders on its own
+    hero.classList.add('lens-on');
+    let t = 0;
+    (function wander() {
+      const r = hero.getBoundingClientRect();
+      t += 0.006;
+      placeLens(r.width * (0.5 + 0.38 * Math.sin(t * 1.3)), r.height * (0.5 + 0.3 * Math.sin(t * 2.1)));
+      requestAnimationFrame(wander);
+    })();
+  }
+
+  // ---------- Sherlock ----------
+  const QUOTES = [
+    'You see, but you do not observe.',
+    'It is a capital mistake to theorise before one has data.',
+    'There is nothing more deceptive than an obvious fact.',
+    'Data! Data! Data! I cannot make bricks without clay.',
+    'When you have eliminated the impossible, whatever remains… must be the truth.',
+    'The game is afoot!',
+    'Shorter links, Watson. Fewer places for villains to hide.'
+  ];
+  const SUSPICIOUS = ['Suspicious… most suspicious.', 'That link is wearing a disguise.', 'I smell a forgery, Watson.', 'Not on my watch.'];
+  const SOLVED = ['Elementary!', 'Case closed.', 'A tidy little link. Well done.', 'Filed under "solved".'];
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const sherlock = (() => {
+    const el = $('#sherlock');
+    const bubble = $('#speech');
+    const pupils = el.querySelectorAll('.pupil');
+    let hideTimer, qi = 0;
+
+    new IntersectionObserver((entries) => {
+      entries.forEach((en) => el.classList.toggle('is-up', en.isIntersecting));
+    }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' }).observe($('.footer'));
+
+    document.addEventListener('pointermove', (e) => {
+      if (!el.classList.contains('is-up')) return;
+      pupils.forEach((p) => {
+        const r = p.getBoundingClientRect();
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height / 2);
+        const d = Math.hypot(dx, dy) || 1;
+        const m = Math.min(5, d / 40);
+        p.style.transform = `translate(${(dx / d) * m}px, ${(dy / d) * m * 0.6}px)`;
+      });
+    });
+
+    if (!reduceMotion) setInterval(() => { el.classList.add('blink'); setTimeout(() => el.classList.remove('blink'), 200); }, 4200);
+
+    function say(text, suspicious) {
+      el.classList.add('is-up');
+      el.classList.toggle('suspicious', Boolean(suspicious));
+      bubble.textContent = text;
+      bubble.classList.add('show');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        bubble.classList.remove('show'); el.classList.remove('suspicious');
+        const f = $('.footer').getBoundingClientRect();
+        if (f.top > innerHeight) el.classList.remove('is-up');
+      }, 3600);
+    }
+    $('#sherlock-btn').addEventListener('click', () => say(QUOTES[qi++ % QUOTES.length]));
+    return { say };
+  })();
+
+  // ---------- the illustrated scene: size it to the hero, parallax with the mouse ----------
+  const scene = $('#scene');
+  const rain = $('.rain');
+  function sizeScene() {
+    const h = Math.round(hero.getBoundingClientRect().bottom + scrollY + 60);
+    scene.style.height = h + 'px';
+    rain.style.height = h + 'px';
+  }
+  sizeScene();
+  addEventListener('resize', sizeScene);
+  document.fonts && document.fonts.ready.then(sizeScene);
+  if (finePointer && !reduceMotion) {
+    const layers = scene.querySelectorAll('.layer');
+    addEventListener('pointermove', (e) => {
+      if (scrollY > scene.offsetHeight) return;
+      const dx = e.clientX / innerWidth - 0.5;
+      const dy = e.clientY / innerHeight - 0.5;
+      layers.forEach((l) => {
+        const d = Number(l.dataset.depth);
+        l.style.transform = `translate(${-dx * d * 2}px, ${-dy * d}px)`;
+      });
+    });
+  }
+
+  // ---------- boot ----------
+  (async () => {
+    renderCases();
+    mode = await detectMode();
+    const display = linkBase().replace(/^https?:\/\//, '');
+    $('#domain-chip').textContent = display;
+    $('#domain-chip').title = 'Every link starts with ' + linkBase();
+    $('#mode-badge').textContent = mode === 'server'
+      ? '● Baker Street server mode — links work for everyone.'
+      : '● Pocket-notebook mode — links are kept in this browser and open on this device.';
+    updateAliasPreview();
+    if (mode === 'server') refreshClicks();
+  })();
+})();
+
+</script>
+</body>
+</html>
